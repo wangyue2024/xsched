@@ -2,6 +2,7 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
+#include <unordered_map>
 
 #include "xsched/utils/log.h"
 #include "xsched/utils/map.h"
@@ -9,6 +10,7 @@
 #include "xsched/preempt/xqueue/xqueue.h"
 #include "xsched/cuda/hal.h"
 #include "xsched/cuda/shim/shim.h"
+#include "xsched/cuda/shim/context_registry.h"
 #include "xsched/cuda/hal/common/cuda.h"
 #include "xsched/cuda/hal/common/levels.h"
 #include "xsched/cuda/hal/common/options.h"
@@ -24,37 +26,45 @@ static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_even
 
 CUstream GetPTDS()
 {
-    /// FIXME: Here we assume that the thread will only use one single CUDA context.
-    /// However, each CUDA context should have its own per-thread default stream.
-    /// TODO: Destory the stream when the thread exits.
-    static thread_local CUstream per_thread_default_stream = 0;
-    if (per_thread_default_stream != 0) return per_thread_default_stream;
+    /// Each CUDA context should have its own per-thread default stream.
+    CUcontext ctx = nullptr;
+    if (Driver::CtxGetCurrent(&ctx) != CUDA_SUCCESS || ctx == nullptr) {
+        return nullptr;
+    }
+
+    static thread_local std::unordered_map<CUcontext, CUstream> ptds_map;
+    auto it = ptds_map.find(ctx);
+    if (it != ptds_map.end()) return it->second;
 
     CUstream stream = nullptr;
-    CUDA_ASSERT(Driver::StreamCreate(&stream, CU_STREAM_NON_BLOCKING));
+    if (Driver::StreamCreate(&stream, CU_STREAM_NON_BLOCKING) != CUDA_SUCCESS) {
+        return nullptr;
+    }
 
-    /// FIXME: If XSCHED_AUTO_XQUEUE is not turned on,
-    /// there is no meaning creating new per-thread default streams.
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, stream);});
-    per_thread_default_stream = stream;
+    CudaContextRegistry::Register(ctx, GetHwQueueHandle(stream));
+    ptds_map[ctx] = stream;
     return stream;
 }
 
 void WaitBlockingXQueues()
 {
+    CUcontext ctx = nullptr;
+    if (Driver::CtxGetCurrent(&ctx) != CUDA_SUCCESS || ctx == nullptr) return;
+    auto handles = CudaContextRegistry::GetSnapshot(ctx);
+
     std::list<std::shared_ptr<XQueueWaitAllCommand>> wait_cmds;
-    XResult res = XQueueManager::ForEach([&](std::shared_ptr<XQueue> xq)->XResult {
+    for (auto hwq_h : handles) {
+        auto xq = HwQueueManager::GetXQueue(hwq_h);
+        if (xq == nullptr) continue;
         auto hwq = xq->GetHwQueue();
         auto cuda_q = std::dynamic_pointer_cast<CudaQueueLv1>(hwq);
-        if (cuda_q == nullptr) return kXSchedErrorUnknown;
-        // does not need to wait a non-blocking stream
-        if (cuda_q->GetStreamFlags() & CU_STREAM_NON_BLOCKING) return kXSchedSuccess;
+        if (cuda_q == nullptr) continue;
+        if (cuda_q->GetStreamFlags() & CU_STREAM_NON_BLOCKING) continue;
         auto wait_cmd = xq->SubmitWaitAll();
-        if (wait_cmd == nullptr) return kXSchedErrorUnknown;
+        if (wait_cmd == nullptr) continue;
         wait_cmds.push_back(wait_cmd);
-        return kXSchedSuccess;
-    });
-    XASSERT(res == kXSchedSuccess, "Fail to submit wait all commands");
+    }
     for (auto &cmd : wait_cmds) cmd->Wait();
 }
 
@@ -245,9 +255,12 @@ CUresult XStreamEndCapture_ptsz(CUstream stream, CUgraph *graph)
 
 CUresult XMemFree_v2(CUdeviceptr dptr)
 {
-    /// TODO: Optimize this.
-    /// In CUDA semantics, cuMemFree only waits for commands who use this memory.
-    XQueueManager::ForEachWaitAll();
+    /// Optimized: only wait for commands in the current context.
+    /// CUDA semantics: cuMemFree waits for commands in the current context.
+    CUcontext ctx = nullptr;
+    if (Driver::CtxGetCurrent(&ctx) == CUDA_SUCCESS && ctx != nullptr) {
+        CudaContextRegistry::WaitAllInContext(ctx);
+    }
     return Driver::MemFree_v2(dptr);
 }
 
@@ -465,7 +478,10 @@ CUresult XStreamQuery_ptsz(CUstream stream)
 CUresult XCtxSynchronize()
 {
     XDEBG("XCtxSynchronize()");
-    XQueueManager::ForEachWaitAll();
+    CUcontext ctx = nullptr;
+    if (Driver::CtxGetCurrent(&ctx) == CUDA_SUCCESS && ctx != nullptr) {
+        CudaContextRegistry::WaitAllInContext(ctx);
+    }
     return Driver::CtxSynchronize();
 }
 
@@ -479,6 +495,10 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
         CUresult res = Driver::StreamCreate(stream, flags);
         if (res != CUDA_SUCCESS) return res;
         XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, *stream);});
+        CUcontext ctx = nullptr;
+        if (Driver::StreamGetCtx(*stream, &ctx) == CUDA_SUCCESS && ctx != nullptr) {
+            CudaContextRegistry::Register(ctx, GetHwQueueHandle(*stream));
+        }
         XDEBG("XStreamCreate(stream: %p, flags: 0x%x) = %d", *stream, flags, res);
         return res;
     }
@@ -488,7 +508,14 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
         CUresult res = Driver::StreamCreate(stream, flags);
         if (res != CUDA_SUCCESS) return res;
         XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, *stream);});
+        CUcontext ctx = nullptr;
+        if (Driver::StreamGetCtx(*stream, &ctx) == CUDA_SUCCESS && ctx != nullptr) {
+            CudaContextRegistry::Register(ctx, GetHwQueueHandle(*stream));
+        }
         g_single_stream = *stream;
+    } else if (flags != 0) {
+        XWARN("XStreamCreate: flags 0x%x ignored in single-stream mode (stream %p already created)",
+              flags, g_single_stream);
     }
 
     g_single_stream_ref_cnt++;
@@ -504,6 +531,10 @@ CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int pri
         CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
         if (res != CUDA_SUCCESS) return res;
         XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, *stream);});
+        CUcontext ctx = nullptr;
+        if (Driver::StreamGetCtx(*stream, &ctx) == CUDA_SUCCESS && ctx != nullptr) {
+            CudaContextRegistry::Register(ctx, GetHwQueueHandle(*stream));
+        }
         XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d) = %d",
               *stream, flags, priority, res);
         return res;
@@ -514,7 +545,14 @@ CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int pri
         CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
         if (res != CUDA_SUCCESS) return res;
         XQueueManager::AutoCreate([&](HwQueueHandle *hwq) {return CudaQueueCreate(hwq, *stream);});
+        CUcontext ctx = nullptr;
+        if (Driver::StreamGetCtx(*stream, &ctx) == CUDA_SUCCESS && ctx != nullptr) {
+            CudaContextRegistry::Register(ctx, GetHwQueueHandle(*stream));
+        }
         g_single_stream = *stream;
+    } else if (flags != 0 || priority != 0) {
+        XWARN("XStreamCreateWithPriority: flags 0x%x, priority %d ignored in single-stream mode",
+              flags, priority);
     }
 
     g_single_stream_ref_cnt++;
@@ -528,6 +566,9 @@ CUresult XStreamDestroy(CUstream stream)
 {
     if (!GetCudaSingleStreamPerProcessEnabled()) {
         XDEBG("XStreamDestroy(stream: %p)", stream);
+        CUcontext ctx = nullptr;
+        Driver::StreamGetCtx(stream, &ctx);
+        CudaContextRegistry::Unregister(ctx, GetHwQueueHandle(stream));
         XQueueManager::AutoDestroy(GetHwQueueHandle(stream));
         return Driver::StreamDestroy(stream);
     }
@@ -536,6 +577,9 @@ CUresult XStreamDestroy(CUstream stream)
     std::lock_guard<std::mutex> lock(g_single_stream_mutex);
     g_single_stream_ref_cnt--;
     if (g_single_stream_ref_cnt == 0) {
+        CUcontext ctx = nullptr;
+        Driver::StreamGetCtx(stream, &ctx);
+        CudaContextRegistry::Unregister(ctx, GetHwQueueHandle(stream));
         XQueueManager::AutoDestroy(GetHwQueueHandle(stream));
         res = Driver::StreamDestroy(g_single_stream);
         g_single_stream = nullptr;
@@ -549,6 +593,9 @@ CUresult XStreamDestroy_v2(CUstream stream)
 {
     if (!GetCudaSingleStreamPerProcessEnabled()) {
         XDEBG("XStreamDestroy_v2(stream: %p)", stream);
+        CUcontext ctx = nullptr;
+        Driver::StreamGetCtx(stream, &ctx);
+        CudaContextRegistry::Unregister(ctx, GetHwQueueHandle(stream));
         XQueueManager::AutoDestroy(GetHwQueueHandle(stream));
         return Driver::StreamDestroy_v2(stream);
     }
@@ -557,6 +604,9 @@ CUresult XStreamDestroy_v2(CUstream stream)
     std::lock_guard<std::mutex> lock(g_single_stream_mutex);
     g_single_stream_ref_cnt--;
     if (g_single_stream_ref_cnt == 0) {
+        CUcontext ctx = nullptr;
+        Driver::StreamGetCtx(stream, &ctx);
+        CudaContextRegistry::Unregister(ctx, GetHwQueueHandle(stream));
         XQueueManager::AutoDestroy(GetHwQueueHandle(stream));
         res = Driver::StreamDestroy_v2(g_single_stream);
         g_single_stream = nullptr;
