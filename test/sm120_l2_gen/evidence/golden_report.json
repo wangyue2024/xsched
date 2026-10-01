@@ -1,0 +1,352 @@
+{
+  "mode": "golden",
+  "checks": [
+    {
+      "check": "G1 guardian_instructions (53) == inject_sm86.asm/check_preempt (53)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "G1 resume_instructions (32) == inject_sm86.asm/restore_exec (32)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "G2 check_preempt: all 4 encoder output(s) present in official array",
+      "pass": true,
+      "detail": "positions [2, 3, 21, 22]"
+    },
+    {
+      "check": "G2 restore_exec: all 4 encoder output(s) present in official array",
+      "pass": true,
+      "detail": "positions [2, 3, 16, 17]"
+    },
+    {
+      "check": "G2b exit_if_idempotent: all 11 encoder output(s) present in official asm",
+      "pass": true,
+      "detail": "positions [0, 1, 2, 3, 7, 8, 9, 11, 22, 23, 24]"
+    },
+    {
+      "check": "G3a check_preempt: 4 encoded replacement(s) reproducible (official@[2, 3, 21, 22], new@[1, 2, 19, 20])",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "G3b check_preempt: non-replacement differences confined to scheduling (12 equal runs, 9 replace runs)",
+      "pass": true,
+      "detail": "see report"
+    },
+    {
+      "check": "G3a restore_exec: 4 encoded replacement(s) reproducible (official@[2, 3, 16, 17], new@[1, 2, 16, 17])",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "G3b restore_exec: non-replacement differences confined to scheduling (4 equal runs, 2 replace runs)",
+      "pass": true,
+      "detail": "see report"
+    }
+  ],
+  "diffs": {
+    "check_preempt": {
+      "len_a": 53,
+      "len_b": 50,
+      "n_equal_runs": 12,
+      "n_replace_runs": 9,
+      "n_delete_runs": 2,
+      "n_insert_runs": 1,
+      "diff_runs": [
+        {
+          "tag": "replace",
+          "a": [
+            0,
+            2
+          ],
+          "b": [
+            0,
+            1
+          ],
+          "a_words": [
+            "0000034000007945 000fe40003800000",
+            "0000000000087919 000e220000002200"
+          ],
+          "b_words": [
+            "0000031000007945 000fe40003800000"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            4,
+            5
+          ],
+          "b": [
+            3,
+            4
+          ],
+          "a_words": [
+            "0000029000017945 000fe20003800000"
+          ],
+          "b_words": [
+            "0000000000087919 000e280000002200"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            17,
+            18
+          ],
+          "b": [
+            16,
+            17
+          ],
+          "a_words": [
+            "0000016000027945 000fe20003800000"
+          ],
+          "b_words": [
+            "0000016000017945 000fe20003800000"
+          ]
+        },
+        {
+          "tag": "delete",
+          "a": [
+            20,
+            21
+          ],
+          "b": [
+            19,
+            19
+          ],
+          "a_words": [
+            "00000001ff037424 000fe200078e00ff"
+          ],
+          "b_words": []
+        },
+        {
+          "tag": "insert",
+          "a": [
+            23,
+            23
+          ],
+          "b": [
+            21,
+            22
+          ],
+          "a_words": [],
+          "b_words": [
+            "00000001ff037424 000fca00078e00ff"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            25,
+            26
+          ],
+          "b": [
+            24,
+            25
+          ],
+          "a_words": [
+            "000000a000037945 000fe20003800000"
+          ],
+          "b_words": [
+            "000000a000027945 000fe20003800000"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            31,
+            32
+          ],
+          "b": [
+            30,
+            31
+          ],
+          "a_words": [
+            "0000000000030942 000fe20003800000"
+          ],
+          "b_words": [
+            "0000000000020942 000fe20003800000"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            35,
+            36
+          ],
+          "b": [
+            34,
+            35
+          ],
+          "a_words": [
+            "0000000000037941 000fea0003800000"
+          ],
+          "b_words": [
+            "0000000000027941 000fea0003800000"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            39,
+            40
+          ],
+          "b": [
+            38,
+            39
+          ],
+          "a_words": [
+            "0000000000027941 000fea0003800000"
+          ],
+          "b_words": [
+            "0000000000017941 000fea0003800000"
+          ]
+        },
+        {
+          "tag": "delete",
+          "a": [
+            45,
+            46
+          ],
+          "b": [
+            44,
+            44
+          ],
+          "a_words": [
+            "0000000000017941 000fea0003800000"
+          ],
+          "b_words": []
+        },
+        {
+          "tag": "replace",
+          "a": [
+            47,
+            48
+          ],
+          "b": [
+            45,
+            46
+          ],
+          "a_words": [
+            "0000000000007b1d 000fec0000000000"
+          ],
+          "b_words": [
+            "0000000000007b1d 000fec0000010000"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            50,
+            52
+          ],
+          "b": [
+            48,
+            49
+          ],
+          "a_words": [
+            "0000001000008947 000fea0003800000",
+            "000000000000794d 000fea0003800000"
+          ],
+          "b_words": [
+            "000000000000094d 000fea0003800000"
+          ]
+        }
+      ]
+    },
+    "restore_exec": {
+      "len_a": 32,
+      "len_b": 32,
+      "n_equal_runs": 4,
+      "n_replace_runs": 2,
+      "n_delete_runs": 1,
+      "n_insert_runs": 2,
+      "diff_runs": [
+        {
+          "tag": "replace",
+          "a": [
+            0,
+            2
+          ],
+          "b": [
+            0,
+            1
+          ],
+          "a_words": [
+            "0000013000007945 000fe40003800000",
+            "0000000000007919 000e220000002500"
+          ],
+          "b_words": [
+            "0000012000007945 000fe40003800000"
+          ]
+        },
+        {
+          "tag": "insert",
+          "a": [
+            4,
+            4
+          ],
+          "b": [
+            3,
+            4
+          ],
+          "a_words": [],
+          "b_words": [
+            "0000000000007919 000e280000002500"
+          ]
+        },
+        {
+          "tag": "replace",
+          "a": [
+            14,
+            15
+          ],
+          "b": [
+            14,
+            15
+          ],
+          "a_words": [
+            "0000000000007b1d 000fec0000000000"
+          ],
+          "b_words": [
+            "0000000000007b1d 000fec0000010000"
+          ]
+        },
+        {
+          "tag": "delete",
+          "a": [
+            18,
+            19
+          ],
+          "b": [
+            18,
+            18
+          ],
+          "a_words": [
+            "0000000000007947 000fea0003800000"
+          ],
+          "b_words": []
+        },
+        {
+          "tag": "insert",
+          "a": [
+            32,
+            32
+          ],
+          "b": [
+            31,
+            32
+          ],
+          "a_words": [],
+          "b_words": [
+            "0000000000007918 000fc00000000000"
+          ]
+        }
+      ]
+    }
+  }
+}

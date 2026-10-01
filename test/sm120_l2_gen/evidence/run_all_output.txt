@@ -1,0 +1,41 @@
+
+=== 0. prerequisites ===
+inputs OK
+
+=== 1. review (T3 census) ===
+sm120 census OK (check_preempt: 64 instrs / BPT 4)
+
+=== 2. golden regression (sm86, expect 9/9 PASS) ===
+[PASS] G1 guardian_instructions (53) == inject_sm86.asm/check_preempt (53)
+[PASS] G1 resume_instructions (32) == inject_sm86.asm/restore_exec (32)
+[PASS] G2 check_preempt: all 4 encoder output(s) present in official array  -- positions [2, 3, 21, 22]
+[PASS] G2 restore_exec: all 4 encoder output(s) present in official array  -- positions [2, 3, 16, 17]
+[PASS] G2b exit_if_idempotent: all 11 encoder output(s) present in official asm  -- positions [0, 1, 2, 3, 7, 8, 9, 11, 22, 23, 24]
+[PASS] G3a check_preempt: 4 encoded replacement(s) reproducible (official@[2, 3, 21, 22], new@[1, 2, 19, 20])
+[PASS] G3b check_preempt: non-replacement differences confined to scheduling (12 equal runs, 9 replace runs)  -- see report
+[PASS] G3a restore_exec: 4 encoded replacement(s) reproducible (official@[2, 3, 16, 17], new@[1, 2, 16, 17])
+[PASS] G3b restore_exec: non-replacement differences confined to scheduling (4 equal runs, 2 replace runs)  -- see report
+patched cubin: D:\1file\Desktop\code\xsched\test\sm120_l2_gen\evidence\patched_86.cubin
+report       : D:\1file\Desktop\code\xsched\test\sm120_l2_gen\evidence\golden_report.json
+golden 9/9 PASS, exit 0
+
+=== 3. generate sm120 (guardian 50 + resume 32) ===
+[check_preempt] 4 placeholders -> 4 replacements; trim=guardian (-14); final 50 instrs
+[restore_exec] 4 placeholders -> 4 replacements; trim=resume (-0); final 32 instrs
+patched cubin: D:\1file\Desktop\code\xsched\test\sm120_l2_gen\evidence\patched_120.cubin (sha256 509c816a5b312b5c876f265a12bb47a2cf240da87cfdf119028e811bca13e4ea)
+cpp preview  : D:\1file\Desktop\code\xsched\test\sm120_l2_gen\evidence\preview_sm120.cpp (82 instructions)
+report       : D:\1file\Desktop\code\xsched\test\sm120_l2_gen\evidence\gen_sm120_report.json
+generate OK
+
+=== 4. nvdisasm independent re-verification (patched_120.cubin) ===
+nvdisasm reverify OK: rc=0, BPT=18, all six window LDCs present
+
+=== 5. reproducibility (second run, run2/) ===
+MATCH patched_120.cubin
+MATCH preview_sm120.cpp
+MATCH gen_sm120_report.json
+MATCH golden_report.json
+MATCH patched_86.cubin
+
+=== summary ===
+ALL T3/T4 CHECKS PASSED (9/9 golden, 50+32 generate, nvdisasm OK, reproducible)

@@ -6,7 +6,6 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue)](https://github.com/XpuOS/xsched/blob/main/LICENSE)
 
-
 ---
 
 ## Latest News
@@ -18,11 +17,10 @@
 - [2025/07] We presented our XSched paper at [OSDI 2025](https://www.usenix.org/conference/osdi25/presentation/shen-weihang) and prepared several interesting demo videos: [Ascend910](https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af), [GV100](https://github.com/user-attachments/assets/dffb821b-92e2-44c5-bd59-a6946b0c4d02), [Least-Laxity-First](https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660), and [Active-Window-First](https://github.com/user-attachments/assets/877aeb5f-35b6-4bc1-b553-d76525a8adb3).
 - [2025/06] We officially released XSched! Check out our [blog post](docs/xsched-intro-2025-en.md).
 
-
 ---
 
-
 ## Demos
+
 XSched eliminates video stuttering in AI video conference applications on AI PCs
 
 - Hardware: [Intel Core Ultra NPU](https://www.intel.com/content/www/us/en/products/details/processors/core-ultra.html) (i.e., NPU 3720)
@@ -33,11 +31,9 @@ For more details, please see the 2nd case study in our [paper](docs/xsched-osdi2
 
 https://github.com/user-attachments/assets/3eb256c3-9107-4d8b-ae8d-0e3ada54aec1
 
-
 ## About
 
-XSched is a preemptive scheduling framework for diverse XPUs (referring to various accelerators, such as GPUs, NPUs, ASICs, and FPGAs) across different brands, generations, and software platforms. XSched provides unified interfaces for scheduling XPU tasks through a preemptible command queue abstraction (XQueue), enabling hardware-agnostic, flexible scheduling policies for various objectives. XSched introduces a multi-level hardware model that helps advanced XPUs achieve optimal scheduling performance while maintaining compatibility with emerging XPUs. The framework is designed to efficiently schedule XPU tasks while remaining transparent to existing XPU-based applications. 
-
+XSched is a preemptive scheduling framework for diverse XPUs (referring to various accelerators, such as GPUs, NPUs, ASICs, and FPGAs) across different brands, generations, and software platforms. XSched provides unified interfaces for scheduling XPU tasks through a preemptible command queue abstraction (XQueue), enabling hardware-agnostic, flexible scheduling policies for various objectives. XSched introduces a multi-level hardware model that helps advanced XPUs achieve optimal scheduling performance while maintaining compatibility with emerging XPUs. The framework is designed to efficiently schedule XPU tasks while remaining transparent to existing XPU-based applications.
 
 ### Features
 
@@ -46,7 +42,6 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
 - **Extensibility**: Accommodates new hardware features and software platforms.
 - **Integration**: Adapts to both OS-level and system-level multitasking scenarios.
 - **Performance**: Delivers high scheduling performance with minimal runtime overhead.
-
 
 ## XPU Support Matrix
 
@@ -173,7 +168,6 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
   </tr>
 </table>
 
-
 ## Getting Started
 
 ### Build and Install XSched
@@ -202,7 +196,6 @@ make PLATFORM=cuda
 make PLATFORM="cuda levelzero opencl" # build multiple platforms at once
 ```
 
-
 ### Use Cases
 
 #### Transparently Schedule Applications
@@ -224,7 +217,6 @@ See our examples for more details:
 
 Check out our [example list](examples/README.md) for more advanced use cases.
 
-
 ## Architecture and Workflow
 
 <img src="/docs/img/xsched-framework.png" alt="XSched framework" width="600" />
@@ -237,16 +229,14 @@ XSched consists of four key components: XPU shim (XShim), XPU task preemption mo
 - **[XScheduler](service/server):** named as `xserver` in the code, coordinates all XQueues from different processes, monitors global XQueue status through agent-reported events ③, and invokes the scheduling policy to make decisions when status changes. Decisions are enforced by sending scheduling operations to agents ④. The policy is modular and customizable to suit various workloads.
 - **[XCLI](service/cli):** a command-line tool that can monitor XQueue status, change the policy, or give scheduling hints (e.g., priority) ⑥.
 
-
 ## Development Plan
 
 We will continue to support XSched on more OSes and platforms, and improve the performance of XSched. Please stay tuned!
 
-- [x] Integrated into LLM serving systems (e.g., llama.cpp, vLLM)
-- [x] Support Windows
+- [X] Integrated into LLM serving systems (e.g., llama.cpp, vLLM)
+- [X] Support Windows
 - [ ] Support MacOS
 - [ ] Install as system daemon
-
 
 ## Contributing
 
@@ -256,14 +246,14 @@ We welcome contributions:
 
 - Support more platforms, or a higher preemption level on existing platforms. See [guide](platforms/example/README.md)
 - Implement a new scheduling policy. See [guide](sched/README.md)
-- Integrate XSched into AI-powered applications. 
+- Integrate XSched into AI-powered applications.
 - Report or fix issues.
-
 
 ## Citation
 
 If you use XSched for your research, please cite our [paper](docs/xsched-osdi25.pdf):
-```bibtex    
+
+```bibtex
 @inproceedings{Shen2025xsched,
   title = {{XSched}: Preemptive Scheduling for Diverse {XPU}s},
   author = {Weihang Shen and Mingcong Han and Jialong Liu and Rong Chen and Haibo Chen},

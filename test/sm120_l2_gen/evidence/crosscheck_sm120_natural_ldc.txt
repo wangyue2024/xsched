@@ -1,0 +1,14 @@
+sm120 natural-LDC formula crosscheck (inject_120.asm):
+OK   LDC R6, c[0x0][0x2f8]  asm=0000be00ff067b82  formula=0000be00ff067b82
+OK   LDC R7, c[0x0][0x2fc]  asm=0000bf00ff077b82  formula=0000bf00ff077b82
+OK   LDC R3, c[0x0][0x374]  asm=0000dd00ff037b82  formula=0000dd00ff037b82
+OK   LDC R3, c[0x0][0x378]  asm=0000de00ff037b82  formula=0000de00ff037b82
+OK   LDC R5, c[0x0][0x374]  asm=0000dd00ff057b82  formula=0000dd00ff057b82
+OK   LDC R3, c[0x0][0x378]  asm=0000de00ff037b82  formula=0000de00ff037b82
+OK   LDC R3, c[0x0][0x374]  asm=0000dd00ff037b82  formula=0000dd00ff037b82
+OK   LDC R7, c[0x0][0x378]  asm=0000de00ff077b82  formula=0000de00ff077b82
+OK   LDC R3, c[0x0][0x374]  asm=0000dd00ff037b82  formula=0000dd00ff037b82
+OK   LDC R7, c[0x0][0x378]  asm=0000de00ff077b82  formula=0000de00ff077b82
+OK   LDC R3, c[0x0][0x374]  asm=0000dd00ff037b82  formula=0000dd00ff037b82
+OK   LDC R9, c[0x0][0x378]  asm=0000de00ff097b82  formula=0000de00ff097b82
+12/12 match
