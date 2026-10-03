@@ -1,0 +1,101 @@
+==================================================
+  T6 MVE - sm120 Level-2 guardian splice / block / resume
+  cubin: mve_kernel.cubin   blocks: 2048   mode: full
+  arrays: guardian 50 instrs / resume 32 instrs (from sm120.cpp)
+==================================================
+[env] NVIDIA GeForce RTX 5060, CC 12.0
+  [PASS] sm_120 device
+  [PASS] mve_kernel.cubin loaded
+  [PASS] mve_kernel symbol resolved
+[instrument] guardian splice (mirrors InstrumentContext::Instrument)
+  [info] original entry: 0xb0111a800
+  [PASS] cuXtraGetBinary returned a kernel image
+  [info] kernel image: 4992 bytes, first 16 bytes: 82 7b 01 ff 00 df 00 00 00 08 00 00 00 30 0e 00
+  [PASS] instruction memory block allocated
+  [PASS] guardian + kernel image uploaded
+  [info] guardian entry: 0xb0111c400
+  [PASS] resume instructions uploaded
+  [info] resume entry:   0xb0111e300
+  [info] regs/thread: 16 -> 32
+  [PASS] regs/thread floor >= 32
+  [info] barrier count: 0 -> 1
+  [PASS] barrier count floor >= 1
+  [info] instruction cache invalidated
+[calibrate] spin=1048576 -> 61.64 ms wall (32 blocks); target 50 ms -> spin=850606
+[M0] baseline (no instrumentation, grid=2048, 4 rounds)
+  [FAIL] baseline round 0 complete
+  [diag] round 0: done=266/2048 wall=1861.4 ms [0-255]=116 [256-511]=104 [512-767]=0 [768-1023]=0 [1024-1279]=0 [1280-1535]=0 [1536-1791]=0 [1792-2047]=46
+  [FAIL] baseline round 1 complete
+  [diag] round 1: done=256/2048 wall=1845.7 ms [0-255]=106 [256-511]=104 [512-767]=0 [768-1023]=0 [1024-1279]=0 [1280-1535]=0 [1536-1791]=3 [1792-2047]=43
+  [FAIL] baseline round 2 complete
+  [diag] round 2: done=255/2048 wall=1858.8 ms [0-255]=106 [256-511]=104 [512-767]=0 [768-1023]=0 [1024-1279]=0 [1280-1535]=0 [1536-1791]=0 [1792-2047]=45
+  [FAIL] baseline round 3 complete
+  [diag] round 3: done=273/2048 wall=1890.7 ms [0-255]=123 [256-511]=104 [512-767]=0 [768-1023]=0 [1024-1279]=0 [1280-1535]=0 [1536-1791]=0 [1792-2047]=46
+[M0] refreshing golden with a fresh run
+  [FAIL] golden reference complete after refresh
+[M1] normal path (guarded, flag=0, grid=2048, spin=850606)
+  [FAIL] output bit-exact vs baseline
+  [info] first mismatch at block 120
+  [PASS] preempt_idx == 0 (nothing preempted)
+  [PASS] all block flags clean (exit=0, restore=0)
+  [info] wall time: 1474.0 ms
+  [info] global_exit_flag at end: 0
+[M2] full block (flag=1 before launch, grid=2048)
+  [PASS] no block executed the body (out untouched)
+  [PASS] preempt_idx recorded == kernel idx
+  [PASS] every block marked exit_flag=1
+  [PASS] every block marked restore_flag=1
+  [PASS] blocked launch returned fast (0.2 ms)
+[M3] resume (reactivate + relaunch, grid=2048)
+  [FAIL] output bit-exact vs baseline
+  [info] first mismatch at block 0
+  [PASS] preempt_idx cleared
+  [PASS] restore flags cleared by resume
+  [PASS] exit flags cleared (guarded body ran again)
+  [info] resume wall time: 1480.3 ms
+[M4] partial in-flight (flag set 10 ms into flight, grid=2048)
+  [info] completed blocks: 262 / 2048 (226.2 ms total)
+  [diag] flag=1 preempt_idx=0 (expect 3)
+  [diag] exit[0..3]=0,0,0,0 restore[0..3]=0,0,0,0
+  [diag] exit[2044..]=0,0,0,0 restore[2044..]=0,0,0,0
+  [diag] last completed idx=2047 first missing idx=0
+  [PASS] some blocks completed (first wave passed the checkpoint)
+  [PASS] some blocks were blocked (flag took effect mid-flight)
+  [FAIL] preempt_idx recorded == kernel idx
+  [FAIL] restore flags == blocked blocks (1786)
+[M5] resume after partial
+  [FAIL] output bit-exact vs baseline after resume
+  [info] first mismatch at block 126
+  [PASS] restore flags cleared
+  [info] resume wall time: 0.1 ms
+[M7] three-branch K13 semantics (isolated state injection)
+  [PASS] branch1 (preempt_idx==0): records kernel idx
+  [PASS] branch1: records restore flags (all set)
+  [PASS] branch2 (idx==preempt_idx): idx unchanged
+  [PASS] branch2: records restore flags (all set)
+  [PASS] branch3 (later idx): preempt_idx unchanged
+  [PASS] branch3: does NOT record restore flags
+  [PASS] end-to-end: resumed K1 bit-exact after block
+[M8] shape 1x1x1 / 1 thread (grid 1x1x1, block 1x1x1)
+  [PASS] baseline-complete (all blocks ran)
+  [PASS] full block works for this shape
+  [PASS] resume bit-exact for this shape
+[M8] shape 2x2x2 / 128 threads (grid 2x2x2, block 128x1x1)
+  [PASS] baseline-complete (all blocks ran)
+  [PASS] full block works for this shape
+  [PASS] resume bit-exact for this shape
+[M8] shape 1024 / 256 threads (grid 1024x1x1, block 256x1x1)
+  [FAIL] baseline-complete (all blocks ran)
+  [PASS] full block works for this shape
+  [FAIL] resume bit-exact for this shape
+[calibrate] spin=1048576 -> 65.05 ms wall (32 blocks); target 2 ms -> spin=65536
+[M6] stress loop x1000 (A->B->C1, grid=64, spin=65536)
+  [info] 200/1000 rounds ok (2.9 s elapsed)
+  [info] 400/1000 rounds ok (5.8 s elapsed)
+  [info] 600/1000 rounds ok (8.7 s elapsed)
+  [info] 800/1000 rounds ok (11.4 s elapsed)
+  [info] 1000/1000 rounds ok (14.3 s elapsed)
+  [PASS] 1000 rounds A->B->C1 converged (14.3 s)
+==================================================
+  RESULT: 12 failed check(s)
+==================================================

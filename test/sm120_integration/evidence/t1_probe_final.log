@@ -1,0 +1,49 @@
+﻿==================================================
+  T1 cuxtra probe (sm120 L2 study)
+  cubin: probe_kernels_patched.cubin
+==================================================
+  [info] nvcuda.dll loaded from System32
+[P0] environment & module load
+  [info] driver version: 13030 (13.3)
+  [PASS] at least one CUDA device
+  [info] device 0: NVIDIA GeForce RTX 5060, compute capability 12.0
+  [PASS] compute capability 12.0 (sm_120)
+  [info] CUXTRA_CUDA_LIB=C:\Windows\System32\nvcuda.dll
+  [PASS] 4 probe kernels resolved
+  [PASS] ref_use_param wrote out[1] = 0x1234567890abcdef
+[P1] debugger-parameters window (c[0x0][0x170..0x188], sm120)
+  [PASS] SetDebuggerParams -> GetDebuggerParams read-back identical
+  [info] kernel_read_params out (u32 view): u32[0]=0xa5a6a7a8 u32[1]=0xa1a2a3a4 u32[2]=0xb5b6b7b8 u32[3]=0xb1b2b3b4 u32[4]=0xc5c6c7c8 u32[5]=0xc1c2c3c4 u32[6]=0xe1e2e3e4 u32[7]=0x00000000 u32[8]=0x00000000 u32[9]=0x00000400
+  [PASS] out u64[0] (@0x170 preempt-buf slot) == 0xa1a2a3a4a5a6a7a8
+  [PASS] out u64[1] (@0x178 guardian slot)   == 0xb1b2b3b4b5b6b7b8
+  [PASS] out u64[2] (@0x180 kernel-idx slot) == 0xc1c2c3c4c5c6c7c8
+  [PASS] out u32[6] (@0x188 killable slot)   == 0xe1e2e3e4
+  [info] out u64[4] (@0x168 pre-window neg. control) = 0x0000040000000000
+  [PASS] out u64[4] (@0x168 pre-window) contains NO sentinel
+[P2] entry-point redirect
+  [info] entry(kernel_marker_a)=0xb0111a800 entry(kernel_marker_b)=0xb0111b200
+  [PASS] entry points distinct and non-zero
+  [PASS] kernel_marker_b re-routed to kernel_marker_a body (out[0]=0xA...)
+  [PASS] entry point restored, kernel_marker_b body runs again (out[0]=0xB...)
+[P3] instruction memory (EXIT stub) & redirect
+  [PASS] cuXtraInstrMemBlockAlloc returns a device pointer
+  [PASS] cuXtraInstrMemcpyHtoD uploaded the 16-byte EXIT stub
+  [PASS] kernel_marker_a ran the EXIT stub (out[0] untouched)
+  [PASS] entry point restored, kernel_marker_a body runs again (out[0]=0xA...)
+[P4] binary & resource APIs
+  [PASS] cuXtraGetBinary returns non-empty host image
+  [info] kernel_read_params image: 2304 bytes, first 16: 82 7b 01 ff 00 df 00 00 00 08 00 00 00 22 0e 00
+  [info] LocalRegsPerThread before: 16
+  [PASS] SetLocalRegsPerThread(32) read-back == 32
+  [info] BarrierCnt before: 0
+  [PASS] SetBarrierCnt(1) read-back == 1
+  [info] ParamCount: 1
+  [PASS] ParamCount == 1
+  [info] ParamInfo(0): offset=0x0 size=8 in_shm=0  (shadow of c[0x0][0x380] under test)
+  [PASS] ParamInfo(0) size == 8
+[P5] entry-point stability
+  [PASS] repeated GetEntryPoint returns the same address
+[P6] skipped (known abort on this driver; pass --p6 to attempt anyway)
+==================================================
+  RESULT: 0 failed check(s)
+==================================================

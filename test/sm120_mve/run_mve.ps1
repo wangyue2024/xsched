@@ -14,6 +14,7 @@
 param(
     [switch]$Quick,
     [switch]$SkipBuild,
+    [switch]$NoPreflight,
     [string]$Tag = 'run'
 )
 
@@ -32,6 +33,9 @@ $env:CUXTRA_CUDA_LIB = 'C:\Windows\System32\nvcuda.dll'
 
 $runArgs = @('mve_kernel.cubin')
 if ($Quick) { $runArgs += '--quick' }
+# environment pre-flight is ON by default: it detects foreign GPU load
+# (e.g. a running game) that makes stateful checks untrustworthy.
+if (-not $NoPreflight) { $runArgs += '--preflight' }
 
 Write-Host "[run] mve_main.exe $($runArgs -join ' ')"
 $out = & .\mve_main.exe @runArgs 2>&1 | Out-String
@@ -44,7 +48,13 @@ Write-Host "[run] exit=$exit log=$log"
 $pass = ([regex]::Matches($out, '\[PASS\]')).Count
 $fail = ([regex]::Matches($out, '\[FAIL\]')).Count
 $err  = ([regex]::Matches($out, '\[ERR \]')).Count
+$warn = ([regex]::Matches($out, 'preflight round\(s\) incomplete')).Count
 Write-Host "[run] PASS=$pass FAIL=$fail ERR=$err"
+
+if ($warn -gt 0) {
+    Write-Host '[run] ENVIRONMENT NOT CLEAN: another heavy GPU consumer is running.' -ForegroundColor Yellow
+    Write-Host '[run] Close it (game / heavy app) and re-run for a trustworthy verdict.' -ForegroundColor Yellow
+}
 
 if ($fail -ne 0 -or $err -ne 0 -or $exit -ne 0) {
     Write-Host '[run] FAILED' -ForegroundColor Red

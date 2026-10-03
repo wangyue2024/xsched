@@ -1,0 +1,53 @@
+app_l2.exe : [XSCHED INFO @ T 5116 @ 18:53:12.347037] using app-managed schedul
+er @ D:\1file\Desktop\code\xsched\sched\src\scheduler\scheduler.cpp:32
+所在位置 D:\1file\Desktop\code\xsched\test\sm120_integration\run.ps1:58 字符: 8
++ $out = & "$work\app_l2.exe" 2>&1 | Out-String
++        ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([XSCHED INFO @ ...cheduler.cpp:32 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+==================================================
+  T7 integration: sm120 Level-2 via DLL-proxy stack
+==================================================
+[env] NVIDIA GeForce RTX 5060, CC 12.0
+  [PASS] sm_120 device
+[queue] CudaQueueCreate res=0, XQueueCreate(level-2) res=0
+  [PASS] level-2 XQueue created (sm120 -> CudaQueueLv2)
+  [PASS] second level-2 XQueue created
+[calibrate] spin=1048576 -> 12.60 ms/kernel (wall incl. ~launch); target 5 ms -> spin=416144
+[calibrate] verify: calibrated kernel wall = 5.41 ms
+[I1] functional: 32 kernels through the level-2 queue
+  [PASS] stream synchronized without error
+  [PASS] all 32 kernels completed
+  [PASS] all outputs correct (bit-exact)
+[I2] block/resume: 24 pre + 8 mid-flight kernels
+  [info] after suspend: 6/24 completed (suspend took 3.3 ms)
+  [PASS] mid-flight: some completed, some blocked (0 < done < n_pre)
+  [PASS] queue frozen while suspended (no further completions)
+  [PASS] all commands completed after resume
+  [PASS] all outputs correct (exactly-once semantics)
+  [info] resume->sync: 130.1 ms
+[I3] 20 suspend/resume cycles (8 pre + 4 mid kernels each)
+  [PASS] 20 cycles converged
+[I4] mixed stream: kernel + memcpyAsync + memsetAsync across suspend
+  [PASS] device buffer allocated
+  [PASS] mixed stream synchronized
+  [PASS] kernels around the memory ops all completed
+  [PASS] kernel outputs correct
+  [PASS] memcpy payload intact (head region 0x5A)
+  [PASS] memset window intact (mid region 0x77)
+  [PASS] memcpy payload intact (tail region 0x5A)
+  [PASS] read kernel observed the copied head (out[2])
+[I5] unmanaged stream alongside the managed level-2 queue
+  [PASS] both streams synchronized
+  [PASS] managed + unmanaged kernels all completed (8)
+  [PASS] all outputs correct (both paths)
+[I6] two level-2 queues: suspend q1, q2 unaffected
+  [PASS] q2 completed while q1 suspended (+8)
+  [PASS] q1 stayed frozen
+  [PASS] q1 resumed: all 16 commands completed exactly once
+  [PASS] all outputs correct
+==================================================
+  RESULT: 0 failed check(s)
+==================================================

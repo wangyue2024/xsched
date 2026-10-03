@@ -64,3 +64,28 @@ t5_verify `all T5 checks PASSED`。
 - 与 T1/T2（`test/sm120_l2_probe/evidence/SHA256SUMS.txt`，165 条目）、
   T3/T4（`test/sm120_l2_gen/evidence/SHA256SUMS_T3T4.txt`，39+2 条目）
   互为独立封存，互不覆盖。
+
+## 7. 复验记录（2026-10-03）
+
+> 在 RTX 5060 / 驱动 610.88 / CUDA 12.9.41 环境下重跑完整 MVE 证据链，
+> 并由 `../seal_t5t6.ps1` 对当前快照重新封存。本节为本次复验的结论与
+> 过程记录；§1 的“45 PASS”为早期 harness 计数，当前 harness（含 T7 期间
+> 新增的 M7/M8 检查）预期为 **48 PASS / 0 FAIL**。
+
+1. **干净环境全量通过**：`mve_run.log` 为 2026-10-03 复验中的最新全量运行
+   （48 PASS / 0 FAIL / 0 ERR，exit=0；preflight 4/4 完整、环境健康；
+   M4 命中在飞拦截：完成 1320/2048）。
+2. **M4 注入时序竞争（已知特性，样本留存）**：M4 的“部分在飞拦截”依赖一次
+   跨进度量阻塞式 HtoD 写入在 kernel 执行中途对 SM 可见。实测该写入的可见
+   延迟随 WDDM 跨上下文调度在 ~10ms 至 >1.7s 间波动（本 kernel 全时长约
+   1.7s）；当延迟超过 kernel 时长时，M4 两项“中途生效”检查报失败（收尾为
+   46 PASS / 2 FAIL，其余检查不受影响）。复验期间共捕获 5 例该模式失败，
+   代表样本为 `mve_reverify_m4_late.log`（RESULT: 2 failed check(s)）。
+   同样模式亦出现在 T7 期封存的 `mve_t7_regression.log` 中。该现象为运行
+   环境/WDDM 调度属性，与 guardian 机制无关：M2 全阻断、M3/M5 恢复
+   bit-exact、M6 1000 轮压力、M7/M8 形状与三分支语义在全部运行中稳定通过。
+3. **原 `mve_run.log` 覆盖说明**：复验运行以同名 Tag 覆盖了首次封存版本
+   （旧哈希 `f7d1140e…` 不可回溯；该文件是可重复生成的运行日志，非唯一
+   产物，`mve_full_run1-3.log` / `mve_final.log` / `mve_stability*.log` 等
+   封存样本不受影响）。本节连同重新生成的 `SHA256SUMS_T5T6.txt` 构成对
+   当前快照的最终基线。

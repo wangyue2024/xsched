@@ -1,0 +1,5 @@
+=== Final acceptance environment snapshot ===
+date: 2026-10-02 18:53:12
+name, driver_version, utilization.gpu [%], memory.used [MiB], memory.total [MiB], temperature.gpu, power.draw [W]
+NVIDIA GeForce RTX 5060, 610.88, 2 %, 1334 MiB, 8151 MiB, 45, 13.12 W
+nvcc: Cuda compilation tools, release 12.9, V12.9.41

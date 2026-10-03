@@ -459,6 +459,33 @@ static void casePartial(unsigned gx, int spin, unsigned nblocks, int64_t idx,
     int done = countCompleted(nblocks);
     std::printf("  [info] completed blocks: %d / %u (%.1f ms total)\n",
                 done, nblocks, total);
+
+    /* diagnostic dump: header + first/last flags + missing-block profile */
+    {
+        State sd = readState(nblocks);
+        std::printf("  [diag] flag=%u preempt_idx=%llu (expect %lld)\n",
+                    sd.global_exit_flag, (unsigned long long)sd.preempt_idx,
+                    (long long)idx);
+        std::printf("  [diag] exit[0..3]=%u,%u,%u,%u restore[0..3]=%u,%u,%u,%u\n",
+                    sd.exit_flags[0], sd.exit_flags[1], sd.exit_flags[2], sd.exit_flags[3],
+                    sd.restore_flags[0], sd.restore_flags[1], sd.restore_flags[2], sd.restore_flags[3]);
+        std::printf("  [diag] exit[%u..]=%u,%u,%u,%u restore[%u..]=%u,%u,%u,%u\n",
+                    nblocks - 4,
+                    sd.exit_flags[nblocks-4], sd.exit_flags[nblocks-3],
+                    sd.exit_flags[nblocks-2], sd.exit_flags[nblocks-1],
+                    nblocks - 4,
+                    sd.restore_flags[nblocks-4], sd.restore_flags[nblocks-3],
+                    sd.restore_flags[nblocks-2], sd.restore_flags[nblocks-1]);
+        int first_missing = -1, last_done = -1;
+        CHECK(drvMemcpyDtoH(h_out, d_out, 8 * (size_t)nblocks));
+        for (unsigned i = 0; i < nblocks; ++i) {
+            if (h_out[i] == OUT_FILL) { if (first_missing < 0) first_missing = (int)i; }
+            else last_done = (int)i;
+        }
+        std::printf("  [diag] last completed idx=%d first missing idx=%d\n",
+                    last_done, first_missing);
+    }
+
     REPORT("some blocks completed (first wave passed the checkpoint)",
            done > 0);
     REPORT("some blocks were blocked (flag took effect mid-flight)",
@@ -647,15 +674,55 @@ static int calibrateSpin(int target_ms, unsigned gx)
     return (int)want;
 }
 
+/* ---------------------- environment pre-flight check -------------------- */
+/* Runs the M0 shape as a plain driver launch and reports completeness.
+ * If THIS fails, the machine is under heavy foreign GPU load (e.g. a game
+ * sharing the device) and any subsequent timing/stateful check would be
+ * meaningless -- the operator should re-run with an idle GPU. */
+static void preflightCheck(unsigned gx, int spin, int rounds)
+{
+    std::printf("[preflight] %d round(s) of plain launch, grid=%u, spin=%d\n",
+                rounds, gx, spin);
+    int bad = 0;
+    for (int r = 0; r < rounds; ++r) {
+        resetBuffers(gx);
+        void *params[2];
+        int spin_local = spin;
+        params[0] = &d_out;
+        params[1] = &spin_local;
+        double t0 = nowMs();
+        CHECK(drvLaunchKernel(fn, gx, 1, 1, 128, 1, 1, 0, stream, params, nullptr));
+        CHECK(drvStreamSync(stream));
+        int done = countCompleted(gx);
+        bool ok = (done == (int)gx);
+        if (!ok) ++bad;
+        std::printf("  round %d: done=%d/%u wall=%.1f ms %s\n",
+                    r, done, gx, nowMs() - t0, ok ? "OK" : "*** INCOMPLETE ***");
+        std::fflush(stdout);
+    }
+    if (bad) {
+        std::printf("  [WARN] %d/%d preflight round(s) incomplete.\n", bad, rounds);
+        std::printf("  [WARN] The GPU is likely shared with foreign heavy load\n");
+        std::printf("  [WARN] (e.g. a running game). Re-run with an idle GPU\n");
+        std::printf("  [WARN] for trustworthy results.\n");
+    } else {
+        std::printf("  [preflight] environment healthy (all rounds complete)\n");
+    }
+    std::fflush(stdout);
+}
+
 /* -------------------------------- main ---------------------------------- */
 
 int main(int argc, char **argv)
 {
     const char *cubin_path = nullptr;
     unsigned gx = DEF_BLOCKS;
+    bool preflight = false;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--quick") == 0) {
             g_deep = false;
+        } else if (std::strcmp(argv[i], "--preflight") == 0) {
+            preflight = true;
         } else if (std::strcmp(argv[i], "--blocks") == 0 && i + 1 < argc) {
             gx = (unsigned)std::strtoul(argv[++i], nullptr, 0);
         } else if (argv[i][0] != '-') {
@@ -710,6 +777,11 @@ int main(int argc, char **argv)
     CHECK(drvModuleGetFunction(&fn, mod, "mve_kernel"));
     REPORT("mve_kernel symbol resolved", fn != nullptr);
 
+    /* ---- optional environment pre-flight (before instrument & calibration) ---- */
+    if (preflight) {
+        preflightCheck(gx, 1 << 20, 4);
+    }
+
     /* ---- instrument ---- */
     instrumentKernel();
 
@@ -717,19 +789,55 @@ int main(int argc, char **argv)
     int spin = calibrateSpin(DEF_SPIN_MS, 32);
 
     /* ---- baseline (golden) ---- */
-    std::printf("[M0] baseline (no instrumentation, grid=%u)\n", gx);
-    resetBuffers(gx);
-    {
-        void *params[2] = { &d_out, &spin };
+    std::printf("[M0] baseline (no instrumentation, grid=%u, 4 rounds)\n", gx);
+    for (int r = 0; r < 4; ++r) {
+        resetBuffers(gx);
+        void *params[2];
+        int spin_local = spin;
+        params[0] = &d_out;
+        params[1] = &spin_local;
         double t0 = nowMs();
         CHECK(drvLaunchKernel(fn, gx, 1, 1, 128, 1, 1, 0, stream, params, nullptr));
         CHECK(drvStreamSync(stream));
-        std::printf("  [info] baseline wall time: %.1f ms\n", nowMs() - t0);
+        double wall = nowMs() - t0;
+        int done = countCompleted(gx);
+        if (r == 0) {
+            CHECK(drvMemcpyDtoH(h_out, d_out, 8 * (size_t)gx));
+        }
+        char note[64];
+        std::snprintf(note, sizeof(note), "baseline round %d complete", r);
+        REPORT(note, done == (int)gx);
+        std::printf("  [diag] round %d: done=%d/%u wall=%.1f ms", r, done, gx, wall);
+        /* per-octet histogram of completed slots */
+        for (int b = 0; b < 8; ++b) {
+            int c = 0;
+            unsigned lo = (unsigned)((size_t)gx * b / 8), hi = (unsigned)((size_t)gx * (b + 1) / 8);
+            for (unsigned i = lo; i < hi; ++i)
+                if (h_out[i] != OUT_FILL) ++c;
+            std::printf(" [%u-%u]=%d", lo, hi - 1, c);
+        }
+        std::printf("\n");
+        std::fflush(stdout);
+        golden.assign(h_out, h_out + gx);
     }
-    CHECK(drvMemcpyDtoH(h_out, d_out, 8 * (size_t)gx));
-    golden.assign(h_out, h_out + gx);
-    REPORT("baseline produced all completion markers",
-           countCompleted(gx) == (int)gx);
+    if (countCompleted(gx) == (int)gx) {
+        /* refresh golden from the last good round */
+        CHECK(drvMemcpyDtoH(h_out, d_out, 8 * (size_t)gx));
+        golden.assign(h_out, h_out + gx);
+    } else {
+        /* fall back to a fresh clean reference */
+        std::printf("[M0] refreshing golden with a fresh run\n");
+        resetBuffers(gx);
+        void *params[2];
+        int spin_local = spin;
+        params[0] = &d_out;
+        params[1] = &spin_local;
+        CHECK(drvLaunchKernel(fn, gx, 1, 1, 128, 1, 1, 0, stream, params, nullptr));
+        CHECK(drvStreamSync(stream));
+        CHECK(drvMemcpyDtoH(h_out, d_out, 8 * (size_t)gx));
+        golden.assign(h_out, h_out + gx);
+        REPORT("golden reference complete after refresh", countCompleted(gx) == (int)gx);
+    }
 
     /* ---- M1..M5 on the main grid ---- */
     caseNormal(gx, spin, gx, 1, golden);
