@@ -1,5 +1,6 @@
 #include <list>
 #include <memory>
+#include <atomic>
 #include <algorithm>
 
 #include "xsched/utils/log.h"
@@ -12,6 +13,19 @@ namespace xsched::cuda
 
 std::shared_mutex CudaContextRegistry::mtx_;
 std::unordered_map<CUcontext, std::vector<HwQueueHandle>> CudaContextRegistry::registry_;
+
+/// Incremented on every context destroy; see DestroyGeneration().
+static std::atomic<uint64_t> g_destroy_gen {0};
+
+uint64_t CudaContextRegistry::DestroyGeneration()
+{
+    return g_destroy_gen.load(std::memory_order_acquire);
+}
+
+void CudaContextRegistry::BumpDestroyGeneration()
+{
+    g_destroy_gen.fetch_add(1, std::memory_order_acq_rel);
+}
 
 void CudaContextRegistry::Register(CUcontext ctx, HwQueueHandle hwq_h)
 {
@@ -111,6 +125,10 @@ void CudaContextRegistry::DrainAndClearContext(CUcontext ctx)
     // 3. Clean up registry entry
     std::unique_lock lock(mtx_);
     registry_.erase(ctx);
+
+    // 4. Publish a new generation so that cached context-related state
+    // (e.g., per-thread default streams) can invalidate itself lazily.
+    BumpDestroyGeneration();
 }
 
 } // namespace xsched::cuda
