@@ -1,0 +1,1 @@
+[ERRO @ T15836 @ 20:44:15.309793] cuda error 101: invalid device ordinal @ C:\Projects\xsched\3rdparty\cuxtra\src\cuda\trap.cpp:20

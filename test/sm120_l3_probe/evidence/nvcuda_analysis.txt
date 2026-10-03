@@ -1,0 +1,141 @@
+========================================================================
+nvcuda.dll static analysis (sm120 / Blackwell L3 trap study)
+========================================================================
+file : C:\Windows\System32\nvcuda.dll
+size : 4714728 bytes (0x47f0e8)
+
+========================================================================
+[1] PE overview
+========================================================================
+machine        : x86-64
+format         : PE32+ (64-bit)
+sections       : 6
+   .text    VA=0x00001000 vsize=0x044e350 raw=0x0000400 rsize=0x044e400
+   .rdata   VA=0x00450000 vsize=0x001d224 raw=0x044e800 rsize=0x001d400
+   .data    VA=0x0046e000 vsize=0x0003e60 raw=0x046bc00 rsize=0x0002400
+   .pdata   VA=0x00472000 vsize=0x0004860 raw=0x046e000 rsize=0x0004a00
+   .rsrc    VA=0x00477000 vsize=0x0006848 raw=0x0472a00 rsize=0x0006a00
+   .reloc   VA=0x0047e000 vsize=0x0000df0 raw=0x0479400 rsize=0x0000e00
+export dir RVA : 0x004666b0 (size 0x6148)
+
+========================================================================
+[2] Export table (762 named exports)
+========================================================================
+-- exports matching keywords ['exporttable', 'trap', 'traphandler', 'debug', 'etid', 'timeslice', 'preempt', 'sm', 'inject', 'getinfo', 'exception', 'breakpoint', 'patch', 'cubin', 'elf']
+   (17 hit(s))
+   ord=46    RVA=0x003f2050  cuCtxGetId
+   ord=120   RVA=0x003f2fa4  cuDevSmResourceSplit
+   ord=121   RVA=0x003f2f9e  cuDevSmResourceSplitByCount
+   ord=204   RVA=0x003f1810  cuGetExportTable
+   ord=231   RVA=0x003f2cc2  cuGraphDebugDotPrint
+   ord=246   RVA=0x003f2b54  cuGraphExecGetId
+   ord=261   RVA=0x003f2b4e  cuGraphGetId
+   ord=310   RVA=0x003f25c6  cuGraphicsMapResources
+   ord=311   RVA=0x003f25cc  cuGraphicsMapResources_ptsz
+   ord=324   RVA=0x003f2fc8  cuGreenCtxGetId
+   ord=429   RVA=0x003f20e6  cuMemGetInfo
+   ord=430   RVA=0x003f20ec  cuMemGetInfo_v2
+   ord=601   RVA=0x003f2ad6  cuOccupancyAvailableDynamicSMemPerBlock
+   ord=668   RVA=0x003f284e  cuStreamGetId
+   ord=669   RVA=0x003f2854  cuStreamGetId_ptsz
+   ord=722   RVA=0x003f266e  cuTexRefGetAddressMode
+   ord=738   RVA=0x003f2626  cuTexRefSetAddressMode
+
+-- first 40 exports (alphabetical, for context) --
+   ord=1     RVA=0x003f206e  cuArray3DCreate
+   ord=2     RVA=0x003f2074  cuArray3DCreate_v2
+   ord=3     RVA=0x003f207a  cuArray3DGetDescriptor
+   ord=4     RVA=0x003f2080  cuArray3DGetDescriptor_v2
+   ord=5     RVA=0x003f2056  cuArrayCreate
+   ord=6     RVA=0x003f205c  cuArrayCreate_v2
+   ord=7     RVA=0x003f2092  cuArrayDestroy
+   ord=8     RVA=0x003f2062  cuArrayGetDescriptor
+   ord=9     RVA=0x003f2068  cuArrayGetDescriptor_v2
+   ord=10    RVA=0x003f20b0  cuArrayGetMemoryRequirements
+   ord=11    RVA=0x003f208c  cuArrayGetPlane
+   ord=12    RVA=0x003f2086  cuArrayGetSparseProperties
+   ord=13    RVA=0x003f3028  cuCheckpointProcessCheckpoint
+   ord=14    RVA=0x003f3016  cuCheckpointProcessGetRestoreThreadId
+   ord=15    RVA=0x003f301c  cuCheckpointProcessGetState
+   ord=16    RVA=0x003f3022  cuCheckpointProcessLock
+   ord=17    RVA=0x003f302e  cuCheckpointProcessRestore
+   ord=18    RVA=0x003f3034  cuCheckpointProcessUnlock
+   ord=19    RVA=0x003f30ee  cuCoredumpDeregisterCompleteCallback
+   ord=20    RVA=0x003f30e2  cuCoredumpDeregisterStartCallback
+   ord=21    RVA=0x003f2f50  cuCoredumpGetAttribute
+   ord=22    RVA=0x003f2f56  cuCoredumpGetAttributeGlobal
+   ord=23    RVA=0x003f30e8  cuCoredumpRegisterCompleteCallback
+   ord=24    RVA=0x003f30dc  cuCoredumpRegisterStartCallback
+   ord=25    RVA=0x003f2f5c  cuCoredumpSetAttribute
+   ord=26    RVA=0x003f2f62  cuCoredumpSetAttributeGlobal
+   ord=27    RVA=0x003f1ff6  cuCtxAttach
+   ord=28    RVA=0x003f1fde  cuCtxCreate
+   ord=29    RVA=0x003f1fe4  cuCtxCreate_v2
+   ord=30    RVA=0x003f1fea  cuCtxCreate_v3
+   ord=31    RVA=0x003f1ff0  cuCtxCreate_v4
+   ord=32    RVA=0x003f1ffc  cuCtxDestroy
+   ord=33    RVA=0x003f2002  cuCtxDestroy_v2
+   ord=34    RVA=0x003f2008  cuCtxDetach
+   ord=35    RVA=0x003f29c8  cuCtxDisablePeerAccess
+   ord=36    RVA=0x003f29c2  cuCtxEnablePeerAccess
+   ord=37    RVA=0x003f2fc2  cuCtxFromGreenCtx
+   ord=38    RVA=0x003f2998  cuCtxGetApiVersion
+   ord=39    RVA=0x003f297a  cuCtxGetCacheConfig
+   ord=40    RVA=0x003f2038  cuCtxGetCurrent
+   ... (722 more)
+
+========================================================================
+[3] Raw string sweep (whole image, case-sensitive)
+========================================================================
+TrapHandler      exact-hits=0    ci-hits=0   
+GetTrapHandler   exact-hits=0    ci-hits=0   
+TriggerTrap      exact-hits=0    ci-hits=0   
+GetInfo          exact-hits=4    ci-hits=4   
+      @0x004598e5  ...cuMemFree_v2....cuMemGetInfo....cuMemGetInfo_v2.cuMe
+      @0x004598f5  ...cuMemGetInfo....cuMemGetInfo_v2.cuMemGetAddressRange
+      @0x0046939c  dleForAddressRange.cuMemGetInfo.cuMemGetInfo_v2.cuMemGe
+      @0x004693a9  Range.cuMemGetInfo.cuMemGetInfo_v2.cuMemGetMemPool.cuMe
+cuGetExportTable exact-hits=2    ci-hits=2   
+      @0x00459238  cuDriverGetVersion......cuGetExportTable........cuDeviceGetAttri
+      @0x00467ea4  orName.cuGetErrorString.cuGetExportTable.cuGetProcAddress.cuGetP
+ExportTable      exact-hits=2    ci-hits=2   
+      @0x0045923d  verGetVersion......cuGetExportTable........cuDeviceGetAttri
+      @0x00467ea9  e.cuGetErrorString.cuGetExportTable.cuGetProcAddress.cuGetP
+ETID             exact-hits=0    ci-hits=12  
+Pascal           exact-hits=0    ci-hits=1   
+Volta            exact-hits=0    ci-hits=0   
+Turing           exact-hits=0    ci-hits=4   
+Ampere           exact-hits=0    ci-hits=0   
+Hopper           exact-hits=0    ci-hits=0   
+Ada              exact-hits=3    ci-hits=4   
+      @0x0045dfc2  ..d.l.l.......D3DKMTEnumAdapters2.....D3DKMTEnumAda
+      @0x0045dfda  Adapters2.....D3DKMTEnumAdapters3.....D3DKMTQueryAd
+      @0x0045dff3  dapters3.....D3DKMTQueryAdapterInfo..S.Y.S.T.E.M.\.
+Blackwell        exact-hits=0    ci-hits=0   
+sm_120           exact-hits=0    ci-hits=0   
+sm_100           exact-hits=0    ci-hits=0   
+sm_90            exact-hits=0    ci-hits=0   
+sm_86            exact-hits=0    ci-hits=0   
+sm_80            exact-hits=0    ci-hits=0   
+sm_70            exact-hits=0    ci-hits=0   
+timeslice        exact-hits=0    ci-hits=0   
+preempt          exact-hits=0    ci-hits=0   
+assert           exact-hits=0    ci-hits=0   
+BPT              exact-hits=0    ci-hits=0   
+TRAP             exact-hits=0    ci-hits=0   
+breakpoint       exact-hits=0    ci-hits=0   
+
+========================================================================
+[4] GUID-like literals in image (candidate ETIDs)
+========================================================================
+   (no ASCII GUID strings found)
+
+========================================================================
+[5] Notes / next steps
+========================================================================
+   * cuGetExportTable(&table, &etid) is the entry point every L3
+     trap path funnels through; the ETID GUID is undocumented.
+   * Cross-reference the GUIDs above against cuxtra's
+     cuGetExportTable call sites (see analyze_cuxtra.py).
+   * Arch codenames present here tell us which generations the
+     driver's trap-handler table supports; confirm sm120/Blackwell.
