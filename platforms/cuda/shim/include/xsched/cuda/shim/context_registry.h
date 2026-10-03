@@ -37,6 +37,18 @@ public:
     /// @brief Drain and clear all queues associated with a context upon its destruction.
     static void DrainAndClearContext(CUcontext ctx);
 
+    /// @brief A monotonically increasing counter, incremented on every context
+    /// destroy. Fast paths can cache it to detect "some context was destroyed
+    /// since my cache was built" with a single atomic load.
+    static uint64_t DestroyGeneration();
+
+    /// @brief Advance the destroy generation without touching the registry.
+    /// Used for destruction paths that XSched does not fully intercept
+    /// (e.g., cuDevicePrimaryCtxRelease dropping the refcount to zero):
+    /// cached state (per-thread default streams) will lazily revalidate
+    /// itself on next use via DestroyGeneration().
+    static void BumpDestroyGeneration();
+
 private:
     static std::shared_mutex mtx_;
     static std::unordered_map<CUcontext, std::vector<HwQueueHandle>> registry_;
