@@ -1,0 +1,3 @@
+# Build artifacts and run logs (evaluation tooling only)
+*.exe
+*.log
