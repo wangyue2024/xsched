@@ -17,6 +17,12 @@ public:
 
     virtual void GetGuardianInstructions(const void **guardian_instr, size_t *size) override;
     virtual void GetResumeInstructions(const void **resume_instr, size_t *size) override;
+
+    // Hardware-verified floors (test/sm120_mve/T5_REVIEW.md §4):
+    // guardian max live register R11, resume R21 (incl. the R20/R21 pair
+    // load); one BAR.SYNC per array.  Same values as the sm86 arrays.
+    virtual size_t RequiredRegs() override { return 32; }
+    virtual size_t RequiredBarriers() override { return 1; }
 };
 
 } // namespace xsched::cuda

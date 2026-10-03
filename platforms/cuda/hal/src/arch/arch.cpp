@@ -8,6 +8,7 @@
 #include "xsched/cuda/hal/arch/sm35.h"
 #include "xsched/cuda/hal/arch/sm70.h"
 #include "xsched/cuda/hal/arch/sm86.h"
+#include "xsched/cuda/hal/arch/sm120.h"
 // NEW_CUDA_ARCH: New CUDA architecture support goes here
 
 using namespace xsched::cuda;
@@ -32,6 +33,8 @@ std::shared_ptr<Guardian> Guardian::Instance(CUdevice dev)
         return std::make_shared<GuardianSM70>();
     case 86:
         return std::make_shared<GuardianSM86>();
+    case 120: // Blackwell: RTX 50 series
+        return std::make_shared<GuardianSM120>();
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return nullptr;
@@ -53,14 +56,6 @@ std::shared_ptr<TarpHandler> TarpHandler::Instance(CUdevice dev)
 
 std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
 {
-#if defined(_WIN32)
-    return std::make_shared<CudaQueueLv1>(stream);
-#endif
-
-    if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
-        return std::make_shared<CudaQueueLv3Tsg>(stream);
-    }
-
     CUdevice dev;
     CUcontext stream_ctx;
     CUcontext current_ctx;
@@ -71,12 +66,30 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
             current_ctx, stream_ctx);
     CUDA_ASSERT(Driver::CtxGetDevice(&dev));
 
-    switch (GetArch(dev)) {
+    const int32_t arch = GetArch(dev);
+
+#if defined(_WIN32)
+    // Windows: only the Blackwell (sm120) level-2 path is hardware-verified
+    // on the standard driver (test/sm120_mve, T6).  The trap (L3) path is
+    // unavailable there (cuXtraGetTrapHandlerInfo aborts, T1-P6) and sm120
+    // has no TarpHandlerSM120, so sm120 must NOT fall into CudaQueueLv3Trap.
+    // Other architectures keep the legacy level-1 fallback.
+    if (arch == 120) return std::make_shared<CudaQueueLv2>(stream);
+    return std::make_shared<CudaQueueLv1>(stream);
+#endif
+
+    if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
+        return std::make_shared<CudaQueueLv3Tsg>(stream);
+    }
+
+    switch (arch) {
     case 35: // Kepler: K20, K40, GTX TITAN
         return std::make_shared<CudaQueueLv2>(stream);
     case 70: // Volta: V100, GV100
     case 86: // Ampere: RTX3050 - RTX 3090 Ti
         return std::make_shared<CudaQueueLv3Trap>(stream);
+    case 120: // Blackwell: RTX 50 series -- level-2 only (trap is stage three)
+        return std::make_shared<CudaQueueLv2>(stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return std::make_shared<CudaQueueLv1>(stream);
@@ -85,14 +98,6 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
 
 CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream)
 {
-#if defined(_WIN32)
-    return CudaQueueLv1::DirectLaunch(kernel, stream);
-#endif
-
-    if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
-        return CudaQueueLv3Tsg::DirectLaunch(kernel, stream);
-    }
-
     CUdevice dev;
     CUcontext stream_ctx;
     CUcontext current_ctx;
@@ -103,12 +108,30 @@ CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, C
             current_ctx, stream_ctx);
     CUDA_ASSERT(Driver::CtxGetDevice(&dev));
 
-    switch (GetArch(dev)) {
+    const int32_t arch = GetArch(dev);
+
+#if defined(_WIN32)
+    // Windows: sm120 uses the level-2 direct path so that an already
+    // instrumented kernel stays safe when launched on an unmanaged stream
+    // (the preempt-buffer field of the debugger window is populated before
+    // the passthrough launch).  Other architectures keep the plain
+    // level-1 launch.
+    if (arch == 120) return CudaQueueLv2::DirectLaunch(kernel, current_ctx, stream);
+    return CudaQueueLv1::DirectLaunch(kernel, stream);
+#endif
+
+    if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
+        return CudaQueueLv3Tsg::DirectLaunch(kernel, stream);
+    }
+
+    switch (arch) {
     case 35:
         return CudaQueueLv2::DirectLaunch(kernel, current_ctx, stream);
     case 70:
     case 86:
         return CudaQueueLv3Trap::DirectLaunch(kernel, current_ctx, stream);
+    case 120:
+        return CudaQueueLv2::DirectLaunch(kernel, current_ctx, stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return CudaQueueLv1::DirectLaunch(kernel, stream);
