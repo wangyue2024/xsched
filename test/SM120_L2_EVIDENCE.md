@@ -27,11 +27,11 @@
 | 封存清单 | 条目 | 校验 |
 |---|---|---|
 | `sm120_mve/evidence/SHA256SUMS_T5T6.txt` | 34 | 2026-10-03 复验后由 `seal_t5t6.ps1` 重新生成，逐条 0 错误 |
-| `sm120_integration/evidence/SHA256SUMS_T7.txt` | 33 | 逐条 0 错误 |
+| `sm120_integration/evidence/SHA256SUMS_T7.txt` | 34 | 2026-10-03 release 产物复验后由 `seal_t7.ps1` 重新生成，逐条 0 错误 |
 | `sm120_l2_gen/evidence/SHA256SUMS_T3T4.txt` | 39 | 逐条 0 错误 |
 | `sm120_l2_probe/evidence/SHA256SUMS.txt` | 165 | 逐条 0 错误 |
 
-**271 条封存条目全部校验通过**（校验方法：`Get-FileHash` 与清单逐条比对）。
+**272 条封存条目全部校验通过**（校验方法：`Get-FileHash` 与清单逐条比对）。
 
 约定与说明：
 
@@ -44,7 +44,13 @@
   该现象在 `FINAL_ACCEPTANCE.md` §5 有完整量化解剖；
 - 原 `mve_run.log` 首次封存版本被复验运行同名覆盖（可重复生成的运行日志，
   非唯一产物）；其余全部历史样本（`mve_full_run1-3.log`、`mve_final.log`、
-  `mve_stability*.log` 等）保持原封存状态。
+  `mve_stability*.log` 等）保持原封存状态；
+- **2026-10-03 追加：T7 复验（release 构建产物）**——用 `release/sm120-level2`
+  分支构建的 `output/bin/nvcuda.dll`（生产代码与证据分支逐 token 一致，仅注释
+  语言不同）重跑 `sm120_integration/run.ps1`：**26 PASS / 0 FAIL / 0 ERR**，
+  含 “sm120 -> CudaQueueLv2” 分派确认、suspend 2.6 ms、在飞拦截 0<done<n 与
+  exactly-once 语义；日志 `app_l2_reverify_release_20261003.log` 已纳入重封存
+  的 `SHA256SUMS_T7.txt`（34 条）。
 
 ## 3. 复现指南（一键）
 
