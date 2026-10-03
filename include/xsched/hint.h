@@ -6,53 +6,82 @@
 extern "C" {
 #endif
 
-/// @brief Set the scheduler and policy.
-/// @param scheduler [in] Scheduler type to set.
-/// @param policy    [in] Policy type to set. Used only when scheduler is kSchedulerLocal.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/* ==============================================================================
+ * 1. Scheduler Architecture & Global Policy Selection
+ * ============================================================================== */
+
+/// @brief Select the scheduler architecture and policy at runtime.
+/// @param scheduler [in] Scheduler architecture type (kSchedulerAppManaged,
+///                      kSchedulerLocal or kSchedulerGlobal).
+/// @param policy    [in] Scheduling policy enum (only specified directly by the
+///                      process when scheduler is kSchedulerLocal).
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintSetScheduler(XSchedulerType scheduler, XPolicyType policy);
 
-/// @brief Set the priority of an XQueue.
-/// @param xq    [in] Handle to the XQueue.
-/// @param prio  [in] Priority to set, bigger value means higher priority.
-///     PRIORITY_MIN: the lowest priority.
-///     PRIORITY_MAX: the highest priority.
-///     PRIORITY_NO_EXECUTE: The XQueue will not be executed.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/* ==============================================================================
+ * 2. Static / Dynamic Priority Hints
+ * ============================================================================== */
+
+/// @brief Inject a priority hint for a specific XQueue (used by the HPF, HHPF,
+///        CFS and MLFQ policies).
+/// @param xq    [in] Target XQueue handle.
+/// @param prio  [in] Priority value in [-255, 255]; the larger the value, the
+///              higher the priority:
+///     PRIORITY_MIN:        lowest priority (-255)
+///     PRIORITY_DEFAULT:    default initial priority (0)
+///     PRIORITY_MAX:        highest priority (255)
+///     PRIORITY_NO_EXECUTE: special marker (-256) that permanently forbids the
+///                          queue from executing (sleeping queue)
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintPriority(XQueueHandle xq, Priority prio);
 
-/// @brief Set the utilization of an XQueue.
-/// @param xq     [in] Handle to the XQueue.
-/// @param util   [in] Utilization to set. A percentage integer,
-/// with 0 indicating no utilization and 100 indicating full utilization.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/* ==============================================================================
+ * 3. Utilization Quota & Timeslice Hints
+ * ============================================================================== */
+
+/// @brief Set the compute utilization quota of a specific XQueue (used by the
+///        UP and PUP policies).
+/// @param xq   [in] Target XQueue handle.
+/// @param util [in] Target utilization percentage [0, 100]; 0 means no compute
+///             assigned, 100 means fully saturated.
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintUtilization(XQueueHandle xq, Utilization util);
 
-/// @brief Set the timeslice of the policy.
-/// @param ts_us [in] Timeslice in microseconds to set.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/// @brief Set the base timeslice size of the round-robin scheduling algorithms
+///        (used by UP, PUP, CFS and MLFQ).
+/// @param ts_us [in] Timeslice length in microseconds (us); default 5000 us
+///               (5 ms).
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintTimeslice(Timeslice ts_us);
 
-/// @brief Set the laxity, the lax priority and critical priority of the XQueue.
-/// @param xq         [in] Handle to the XQueue.
-/// @param lax_us     [in] Laxity in microseconds to set.
-/// Indicates how much time the XQueue can be delayed.
-/// @param lax_prio   [in] Lax priority, the priority when laxity is not used up.
-/// @param crit_prio  [in] Critical priority, the priority when laxity is used up.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/* ==============================================================================
+ * 4. Real-Time Laxity & Deadline Hints
+ * ============================================================================== */
+
+/// @brief Set the laxity and the two-phase priorities of an XQueue (used by the
+///        LAX policy).
+/// @param xq        [in] Target XQueue handle.
+/// @param lax_us    [in] Laxity time (us): how much longer the task may be
+///                  delayed before it becomes critical.
+/// @param lax_prio  [in] Regular priority, effective while the laxity is not
+///                  exhausted (relaxed phase).
+/// @param crit_prio [in] Critical priority, applied once the laxity is
+///                  exhausted (critical phase).
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintLaxity(XQueueHandle xq, Laxity lax_us, Priority lax_prio, Priority crit_prio);
 
-/// @brief Set the deadline of the XQueue.
-/// @param xq     [in] Handle to the XQueue.
-/// @param ddl_us [in] Deadline in microseconds to set.
-/// The deadline of the XQueue is the ready time of the XQueue plus ddl_us.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/// @brief Set the deadline of an XQueue (used by the KEDF policy).
+/// @param xq     [in] Target XQueue handle.
+/// @param ddl_us [in] Deadline in microseconds (us); the absolute deadline of
+///               the queue = time when the task enters the Ready state + ddl_us.
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintDeadline(XQueueHandle xq, Deadline ddl_us);
 
-/// @brief Set the concurrency (k) of the K-Earliest Deadline First (K-EDF) policy.
-/// k XQueues with the earliest deadline will be executed concurrently.
-/// @param k [in] Concurrency (k) to set.
-/// @return kXSchedSuccess if successful, otherwise an error code.
+/// @brief Set the maximum number of concurrent queues k for the K-Earliest
+///        Deadline First (K-EDF) policy. The system picks the k XQueues with the
+///        earliest deadlines and launches commands to hardware concurrently.
+/// @param k [in] Concurrency k.
+/// @return kXSchedSuccess on success, otherwise the corresponding error code.
 XResult XHintKDeadline(size_t k);
 
 #ifdef __cplusplus
