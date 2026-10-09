@@ -37,7 +37,9 @@ $sources = @(
     'test/sm120_l2_gen/T3_REPORT.md',
     'test/sm120_l2_gen/T4_REPORT.md',
     'test/sm120_l2_gen/run_all_t3t4.ps1',
-    'test/sm120_l2_gen/seal_t3t4.ps1'
+    'test/sm120_l2_gen/run_all_t3t4.sh',
+    'test/sm120_l2_gen/seal_t3t4.ps1',
+    'test/sm120_l2_gen/seal_t3t4.sh'
 )
 
 # ---- C: inject toolchain artifacts (baseline + official + derived) ----

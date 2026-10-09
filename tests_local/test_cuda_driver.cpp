@@ -2,7 +2,9 @@
 #include <vector>
 #include <string>
 #include <iomanip>
+#if defined(_WIN32)
 #include <windows.h>
+#endif
 #include "xsched/cuda/hal/common/cuda.h"
 
 #define CHECK_CUDA(call)                                                 \

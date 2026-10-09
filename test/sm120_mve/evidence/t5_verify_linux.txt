@@ -1,0 +1,30 @@
+== T5 review: platforms/cuda/hal/src/arch/sm120.cpp ==
+  [PASS] both arrays present  -- ['guardian_instructions', 'resume_instructions']
+[R1] reproduction from T4 pipeline
+  [PASS] guardian == patch(inject_120.cubin) + guardian trim  -- 50 instrs
+  [PASS] resume == patch(inject_120.cubin), no trim  -- 32 instrs
+[R2] debugger-window LDC slots (c[0x0][0x170..0x18C])
+  [PASS] guardian patched LDC == R4/R5@0x170/174 + R6/R7@0x180/184  -- [(4, 368), (5, 372), (6, 384), (7, 388)]
+  [PASS] guardian natural gridDim LDC == R3@0x374/0x378  -- [(3, 884), (3, 888)]
+  [PASS] resume patched LDC == R4/R5@0x170/174 + R20/R21@0x178/17C  -- [(4, 368), (5, 372), (20, 376), (21, 380)]
+  [PASS] no LDC outside the verified window/gridDim set  -- []
+[R3] BSSY/BSYNC pairing and K3 capping
+  [PASS] guardian: every BSSY resolves to its BSYNC (3 pairs)  -- [('0x0', '0x310', 0), ('0x120', '0x130', 1), ('0x1b0', '0x80', 2)]
+  [PASS] resume: every BSSY resolves to its BSYNC (1 pairs)  -- [('0x0', '0x150', 0)]
+  [PASS] guardian caps on BSYNC (K3)  -- last w0=0x0000000000007941
+  [PASS] resume contains RET.ABS.NODEC R20 (jump-back exit)
+[R4] instruction census
+  [PASS] lengths 50 / 32  -- 50 / 32
+  [PASS] EXIT x1 in each
+  [PASS] guardian EXIT is @P0 EXIT (exit when flag set)
+  [PASS] resume EXIT is @!P0 EXIT (exit when restore_flag clear)
+  [PASS] BAR.SYNC x1 in each
+  [PASS] guardian MEMBAR.SC.CTA x1
+  [PASS] WARPSYNC.ALL x1 in each
+  [PASS] resume self-spin BRA x1 (unreachable pad)
+[R5] integrity
+  [PASS] all arrays 16-byte aligned
+  [PASS] no BPT.TRAP placeholder residue
+  [PASS] word size sanity
+
+RESULT: all T5 checks PASSED

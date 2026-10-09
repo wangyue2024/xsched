@@ -43,8 +43,11 @@ $investigation = @(
     'test/sm120_mve/pure_cuda_check.cu',
     'test/sm120_mve/mve_m0_repro.cu',
     'test/sm120_mve/mve_main.cpp',
-    'test/sm120_mve/run_mve.ps1'
+    'test/sm120_mve/run_mve.ps1',
+    'test/sm120_mve/run_mve.sh'
 )
+# (the integration scripts build.sh/run.sh/seal_t7.sh need no extra entry:
+#  section A already covers every file under test/sm120_integration/)
 $mveLogs = Get-ChildItem -File (Join-Path $RepoRoot 'test\sm120_mve\evidence') -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -match 'mve_(t7_regression|stability|diag|preflight)' } |
     Sort-Object FullName | ForEach-Object { Get-RepoRel $_.FullName }

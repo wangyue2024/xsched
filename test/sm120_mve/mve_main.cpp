@@ -39,7 +39,21 @@
  * =====================================================================
  */
 
+#if defined(_WIN32)
 #include <windows.h>
+typedef HMODULE CudaLibHandle;
+static void *cudaLibSym(CudaLibHandle lib, const char *name)
+{
+    return reinterpret_cast<void *>(GetProcAddress(lib, name));
+}
+#else
+#include <dlfcn.h>
+typedef void *CudaLibHandle;
+static void *cudaLibSym(CudaLibHandle lib, const char *name)
+{
+    return dlsym(lib, name);
+}
+#endif
 
 #include <chrono>
 #include <cstdint>
@@ -78,6 +92,8 @@ typedef CUresult (*pfn_cuModuleGetFunction)(CUfunction *, CUmodule, const char *
 typedef CUresult (*pfn_cuMemAlloc)(CUdeviceptr *, size_t);
 typedef CUresult (*pfn_cuMemFree)(CUdeviceptr);
 typedef CUresult (*pfn_cuMemcpyHtoD)(CUdeviceptr, const void *, size_t);
+typedef CUresult (*pfn_cuMemcpyHtoDAsync)(CUdeviceptr, const void *, size_t, CUstream);
+typedef CUresult (*pfn_cuMemsetD8Async)(CUdeviceptr, unsigned char, size_t, CUstream);
 typedef CUresult (*pfn_cuMemcpyDtoH)(void *, CUdeviceptr, size_t);
 typedef CUresult (*pfn_cuMemsetD8)(CUdeviceptr, unsigned char, size_t);
 typedef CUresult (*pfn_cuMemsetD32)(CUdeviceptr, unsigned int, size_t);
@@ -100,22 +116,24 @@ static pfn_cuModuleGetFunction  drvModuleGetFunction;
 static pfn_cuMemAlloc           drvMemAlloc;
 static pfn_cuMemFree            drvMemFree;
 static pfn_cuMemcpyHtoD         drvMemcpyHtoD;
+static pfn_cuMemcpyHtoDAsync    drvMemcpyHtoDAsync;
 static pfn_cuMemcpyDtoH         drvMemcpyDtoH;
 static pfn_cuMemsetD8           drvMemsetD8;
+static pfn_cuMemsetD8Async      drvMemsetD8Async;
 static pfn_cuMemsetD32          drvMemsetD32;
 static pfn_cuStreamCreate       drvStreamCreate;
 static pfn_cuStreamSynchronize drvStreamSync;
 static pfn_cuLaunchKernel       drvLaunchKernel;
 static pfn_cuGetErrorName       drvGetErrorName;
 
-static HMODULE g_cuda = nullptr;
+static CudaLibHandle g_cuda = nullptr;
 
 template <typename T>
 static T cudaSym(const char *name)
 {
-    void *p = reinterpret_cast<void *>(GetProcAddress(g_cuda, name));
+    void *p = cudaLibSym(g_cuda, name);
     if (p == nullptr) {
-        std::printf("FATAL: nvcuda.dll export '%s' not found\n", name);
+        std::printf("FATAL: CUDA driver export '%s' not found\n", name);
         std::exit(2);
     }
     return reinterpret_cast<T>(p);
@@ -135,6 +153,8 @@ static void loadDriverFns()
     drvMemAlloc          = cudaSym<pfn_cuMemAlloc>("cuMemAlloc_v2");
     drvMemFree           = cudaSym<pfn_cuMemFree>("cuMemFree_v2");
     drvMemcpyHtoD        = cudaSym<pfn_cuMemcpyHtoD>("cuMemcpyHtoD_v2");
+    drvMemcpyHtoDAsync   = cudaSym<pfn_cuMemcpyHtoDAsync>("cuMemcpyHtoDAsync_v2");
+    drvMemsetD8Async     = cudaSym<pfn_cuMemsetD8Async>("cuMemsetD8Async");
     drvMemcpyDtoH        = cudaSym<pfn_cuMemcpyDtoH>("cuMemcpyDtoH_v2");
     drvMemsetD8          = cudaSym<pfn_cuMemsetD8>("cuMemsetD8_v2");
     drvMemsetD32         = cudaSym<pfn_cuMemsetD32>("cuMemsetD32_v2");
@@ -242,15 +262,21 @@ static State readState(unsigned nblocks)
 
 static void resetBuffers(unsigned nblocks)
 {
-    CHECK(drvMemsetD8(d_buf, 0, bufBytes(nblocks)));          /* header+flags */
-    CHECK(drvMemsetD8(d_out, 0xCC, 8 * (size_t)nblocks));     /* out markers  */
+    /* Stream-ordered resets: the synchronous cuMemsetD8 is only ordered
+     * with the legacy/blocking stream, NOT with CU_STREAM_NON_BLOCKING
+     * (CUDA doc, stream synchronization).  A blocking memset can land
+     * mid-kernel and wipe the markers, so use the Async variants on the
+     * very stream the kernel will run on (same as the HAL's own
+     * InstrumentManager::Deactivate / Reactivate). */
+    CHECK(drvMemsetD8Async(d_buf, 0, bufBytes(nblocks), stream));      /* header+flags */
+    CHECK(drvMemsetD8Async(d_out, 0xCC, 8 * (size_t)nblocks, stream)); /* out markers  */
     CHECK(drvStreamSync(stream));
 }
 
 static void clearHeader()
 {
     /* exactly like InstrumentManager::Reactivate(): zero the first 16B */
-    CHECK(drvMemsetD8(d_buf, 0, 16));
+    CHECK(drvMemsetD8Async(d_buf, 0, 16, stream));
     CHECK(drvStreamSync(stream));
 }
 
@@ -397,7 +423,7 @@ static void caseBlockAll(unsigned gx, int spin, unsigned nblocks, int64_t idx)
     std::printf("[M2] full block (flag=1 before launch, grid=%u)\n", gx);
     resetBuffers(nblocks);
     uint32_t one = 1;
-    CHECK(drvMemcpyHtoD(d_buf, &one, 4));   /* global_exit_flag = 1 */
+    CHECK(drvMemcpyHtoDAsync(d_buf, &one, 4, stream)); /* global_exit_flag = 1 */
     CHECK(drvStreamSync(stream));
     double dt = mveLaunch(0, idx, cfgOf(gx, spin));
     int done = countCompleted(nblocks);
@@ -526,7 +552,7 @@ static void forceState(uint64_t preempt_idx_val, unsigned nblocks)
     uint32_t one = 1;
     std::memcpy(&b[0], &one, 4);            /* global_exit_flag = 1 */
     std::memcpy(&b[8], &preempt_idx_val, 8); /* preempt_idx        */
-    CHECK(drvMemcpyHtoD(d_buf, b.data(), b.size()));
+    CHECK(drvMemcpyHtoDAsync(d_buf, b.data(), b.size(), stream));
     CHECK(drvStreamSync(stream));
 }
 
@@ -605,8 +631,9 @@ static void stressLoop(int rounds, unsigned gx, int spin, unsigned nblocks)
 
         /* B: blocked */
         uint32_t one = 1;
-        CHECK(drvMemcpyHtoD(d_buf, &one, 4));
-        CHECK(drvMemsetD8(d_out, 0xCC, 8 * (size_t)nblocks)); /* fresh markers */
+        CHECK(drvMemcpyHtoDAsync(d_buf, &one, 4, stream));
+        CHECK(drvMemsetD8Async(d_out, 0xCC, 8 * (size_t)nblocks, stream)); /* fresh markers */
+        CHECK(drvStreamSync(stream));
         mveLaunch(0, idx, cfgOf(gx, spin));
         State sb = readState(nblocks);
         if (sb.preempt_idx != (uint64_t)idx) { ++bad; break; }
@@ -644,8 +671,9 @@ static void caseShape(const char *name, Cfg cfg, unsigned nblocks)
 
     /* blocked -> resume */
     uint32_t one = 1;
-    CHECK(drvMemcpyHtoD(d_buf, &one, 4));
-    CHECK(drvMemsetD8(d_out, 0xCC, 8 * (size_t)nblocks)); /* fresh markers */
+    CHECK(drvMemcpyHtoDAsync(d_buf, &one, 4, stream));
+    CHECK(drvMemsetD8Async(d_out, 0xCC, 8 * (size_t)nblocks, stream)); /* fresh markers */
+    CHECK(drvStreamSync(stream));
     mveLaunch(0, 7, cfg);
     int done2 = countCompleted(nblocks);
     REPORT("full block works for this shape", done2 == 0);
@@ -744,9 +772,17 @@ int main(int argc, char **argv)
                 (int)(mve_resume_instructions_size / 16));
     std::printf("==================================================\n");
 
-    g_cuda = LoadLibraryA("C:\\Windows\\System32\\nvcuda.dll");
+#if defined(_WIN32)
+    const char *drv_lib = "C:\\Windows\\System32\\nvcuda.dll";
+    g_cuda = LoadLibraryA(drv_lib);
+#else
+    /* the real driver: CUXTRA_CUDA_LIB wins, then the standard SONAME */
+    const char *drv_lib = std::getenv("CUXTRA_CUDA_LIB");
+    if (drv_lib == nullptr) drv_lib = "libcuda.so.1";
+    g_cuda = dlopen(drv_lib, RTLD_NOW | RTLD_GLOBAL);
+#endif
     if (g_cuda == nullptr) {
-        std::printf("FATAL: cannot load C:\\Windows\\System32\\nvcuda.dll\n");
+        std::printf("FATAL: cannot load CUDA driver library '%s'\n", drv_lib);
         return 2;
     }
     loadDriverFns();

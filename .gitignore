@@ -21,3 +21,9 @@ __pycache__
 *.cdf
 *.exe
 *.dll
+
+# Linux test binaries / intermediate objects
+tests_local/test_cuda_driver
+test/sm120_mve/mve_main
+test/sm120_integration/work/
+test/sm120_integration/*.o

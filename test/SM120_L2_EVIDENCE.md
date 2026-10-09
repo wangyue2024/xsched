@@ -21,8 +21,20 @@
 | T7 | 全栈集成验收（shim+preempt+sched 全链路） | `sm120_integration/` | `T7_REPORT.md`、`evidence/FINAL_ACCEPTANCE.md`、`evidence/SHA256SUMS_T7.txt`（**33 条**）、`app_l2_*.log`；**26 PASS / 0 FAIL**、L2 停转 3.3ms |
 | 设计 | 总体路线图 / L2 详设 | `docs/` | `sm120-support-design.md`、`sm120-level2-design.md` |
 | 工具 | 新架构适配 SOP | `tools/instrument/` | `README.md`、`extract_sass.py`；生成链 `platforms/cuda/hal/inject/`（`inject.cu`/`Makefile`/`make_msvc.bat`） |
+| Linux | **Linux 复验与适配**（2026-10-09，CUDA 12.9 完整复验） | `SM120_L2_LINUX.md` | Linux 侧脚本（`.sh`）+ 复跑日志（`mve_linux*.log`、`app_l2_linux*.log`、`run_all_output_linux.txt`、`t5_verify_linux.txt`）+ 位级复现矩阵（§3）+ glibc 兼容补丁 |
 
 ## 2. 封存体系（4 套独立 SHA256 封存，互不覆盖）
+
+> **2026-10-09 Linux 复验后的重封存（T3T4 / T5T6 / T7 三套）**：清单已按当前工作树
+> 重新生成（新增 Linux 脚本 `.sh`、Linux 运行日志与 Linux 侧复现日志条目）。
+> 生成器除原有 `seal_*.ps1` 外新增 Linux 对等脚本 `seal_t3t4.sh` / `seal_t5t6.sh` / `seal_t7.sh`
+> （同清单、同顺序，`sha256sum -c` 通过）。
+> **行尾差异提示**：T3T4 旧清单中文本产物（`*.asm`/`*.json`/`*.md`）的哈希是 Windows
+> 运行时的 CRLF 形式，git 提交后工作树为 LF，新克隆上无法直接校验旧文本条目；
+> 二进制产物（cubin）两平台逐字节一致。详见 `SM120_L2_LINUX.md` §3/§6。
+> 被本次 Linux 适配改动的两个被封印文件为 `test/sm120_mve/mve_main.cpp` 与
+> `test/sm120_integration/app_l2.cu`，改动原因见 `SM120_L2_LINUX.md` §4（改前版本可从
+> 提交 `0de4785` 检出；Windows 侧运行日志保持原封存内容不动）。
 
 | 封存清单 | 条目 | 校验 |
 |---|---|---|

@@ -52,5 +52,10 @@ cc: $(CCASM)
 $(CCASM): $(CUBIN)
 	$(NVDISASM) -c $(CUBIN) > $@
 
+ifeq ($(OS), Windows_NT)
 clean:
 	-cmd /c del /q $(CUBIN) $(ASM) $(CCASM)
+else
+clean:
+	-rm -f $(CUBIN) $(ASM) $(CCASM)
+endif

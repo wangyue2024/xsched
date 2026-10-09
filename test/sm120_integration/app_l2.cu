@@ -1,11 +1,16 @@
 // =====================================================================
 //  app_l2.cu - T7 integration test: sm120 Level-2 through the FULL
-//              XSched stack (DLL-proxy interception on Windows)
+//              XSched stack
 //
-//  Run layout (see run.ps1):
+//  Run layout (Windows, see run.ps1):
 //    work/  app_l2.exe + nvcuda.dll (shim from output/bin)
 //    env:   XSCHED_CUDA_LIB / CUXTRA_CUDA_LIB -> System32\ nvcuda.dll
 //           XSCHED_SCHEDULER=APP  (application-managed scheduling)
+//
+//  Run layout (Linux, see run.sh):
+//    LD_PRELOAD=output/lib/libshimcuda.so (no DLL search on Linux)
+//    env:   XSCHED_CUDA_LIB / CUXTRA_CUDA_LIB -> /usr/lib/.../libcuda.so.1
+//           XSCHED_SCHEDULER=APP
 //
 //  The app links output/lib/nvcuda.lib, so BOTH the CUDA runtime calls
 //  (cudart -> nvcuda.dll -> shim) AND the XSched management API calls
@@ -30,7 +35,9 @@
 //  Exit code = number of failed checks (0 = all pass).
 // =====================================================================
 
+#if defined(_WIN32)
 #include <windows.h>
+#endif
 
 #include <chrono>
 #include <cstdint>

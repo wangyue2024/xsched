@@ -1,0 +1,99 @@
+==================================================
+  T6 MVE - sm120 Level-2 guardian splice / block / resume
+  cubin: /run/media/wy/Share/code/xsched/Level2LinuxVerify/xsched/test/sm120_mve/mve_kernel.cubin   blocks: 2048   mode: quick
+  arrays: guardian 50 instrs / resume 32 instrs (from sm120.cpp)
+==================================================
+[env] NVIDIA GeForce RTX 5060, CC 12.0
+  [PASS] sm_120 device
+  [PASS] mve_kernel.cubin loaded
+  [PASS] mve_kernel symbol resolved
+[preflight] 4 round(s) of plain launch, grid=2048, spin=1048576
+  round 0: done=2048/2048 wall=392.2 ms OK
+  round 1: done=2048/2048 wall=394.2 ms OK
+  round 2: done=264/2048 wall=395.2 ms *** INCOMPLETE ***
+  round 3: done=248/2048 wall=392.7 ms *** INCOMPLETE ***
+  [WARN] 2/4 preflight round(s) incomplete.
+  [WARN] The GPU is likely shared with foreign heavy load
+  [WARN] (e.g. a running game). Re-run with an idle GPU
+  [WARN] for trustworthy results.
+[instrument] guardian splice (mirrors InstrumentContext::Instrument)
+  [info] original entry: 0x75c47f6f3600
+  [PASS] cuXtraGetBinary returned a kernel image
+  [info] kernel image: 4992 bytes, first 16 bytes: 82 7b 01 ff 00 df 00 00 00 08 00 00 00 30 0e 00
+  [PASS] instruction memory block allocated
+  [PASS] guardian + kernel image uploaded
+  [info] guardian entry: 0x75c47f6f5200
+  [PASS] resume instructions uploaded
+  [info] resume entry:   0x75c47f6f7100
+  [info] regs/thread: 16 -> 32
+  [PASS] regs/thread floor >= 32
+  [info] barrier count: 0 -> 1
+  [PASS] barrier count floor >= 1
+  [info] instruction cache invalidated
+[calibrate] spin=1048576 -> 11.08 ms wall (32 blocks); target 50 ms -> spin=4730068
+[M0] baseline (no instrumentation, grid=2048, 4 rounds)
+  [FAIL] baseline round 0 complete
+  [diag] round 0: done=277/2048 wall=1692.7 ms [0-255]=135 [256-511]=104 [512-767]=0 [768-1023]=0 [1024-1279]=0 [1280-1535]=0 [1536-1791]=0 [1792-2047]=38
+  [FAIL] baseline round 1 complete
+  [diag] round 1: done=259/2048 wall=1710.6 ms [0-255]=117 [256-511]=104 [512-767]=0 [768-1023]=0 [1024-1279]=0 [1280-1535]=0 [1536-1791]=0 [1792-2047]=38
+  [PASS] baseline round 2 complete
+  [diag] round 2: done=2048/2048 wall=1698.5 ms [0-255]=256 [256-511]=256 [512-767]=256 [768-1023]=256 [1024-1279]=256 [1280-1535]=256 [1536-1791]=256 [1792-2047]=256
+  [PASS] baseline round 3 complete
+  [diag] round 3: done=2048/2048 wall=1701.4 ms [0-255]=256 [256-511]=256 [512-767]=256 [768-1023]=256 [1024-1279]=256 [1280-1535]=256 [1536-1791]=256 [1792-2047]=256
+[M1] normal path (guarded, flag=0, grid=2048, spin=4730068)
+  [PASS] output bit-exact vs baseline
+  [PASS] preempt_idx == 0 (nothing preempted)
+  [PASS] all block flags clean (exit=0, restore=0)
+  [info] wall time: 1674.5 ms
+  [info] global_exit_flag at end: 0
+[M2] full block (flag=1 before launch, grid=2048)
+  [PASS] no block executed the body (out untouched)
+  [PASS] preempt_idx recorded == kernel idx
+  [PASS] every block marked exit_flag=1
+  [PASS] every block marked restore_flag=1
+  [PASS] blocked launch returned fast (0.0 ms)
+[M3] resume (reactivate + relaunch, grid=2048)
+  [PASS] output bit-exact vs baseline
+  [PASS] preempt_idx cleared
+  [PASS] restore flags cleared by resume
+  [PASS] exit flags cleared (guarded body ran again)
+  [info] resume wall time: 1823.0 ms
+[M4] partial in-flight (flag set 10 ms into flight, grid=2048)
+  [info] completed blocks: 277 / 2048 (190.5 ms total)
+  [diag] flag=1 preempt_idx=0 (expect 3)
+  [diag] exit[0..3]=0,0,0,0 restore[0..3]=0,0,0,0
+  [diag] exit[2044..]=0,0,0,0 restore[2044..]=0,0,0,0
+  [diag] last completed idx=2047 first missing idx=0
+  [PASS] some blocks completed (first wave passed the checkpoint)
+  [PASS] some blocks were blocked (flag took effect mid-flight)
+  [FAIL] preempt_idx recorded == kernel idx
+  [FAIL] restore flags == blocked blocks (1771)
+[M5] resume after partial
+  [FAIL] output bit-exact vs baseline after resume
+  [info] first mismatch at block 0
+  [PASS] restore flags cleared
+  [info] resume wall time: 0.1 ms
+[M7] three-branch K13 semantics (isolated state injection)
+  [PASS] branch1 (preempt_idx==0): records kernel idx
+  [PASS] branch1: records restore flags (all set)
+  [PASS] branch2 (idx==preempt_idx): idx unchanged
+  [PASS] branch2: records restore flags (all set)
+  [PASS] branch3 (later idx): preempt_idx unchanged
+  [PASS] branch3: does NOT record restore flags
+  [PASS] end-to-end: resumed K1 bit-exact after block
+[M8] shape 1x1x1 / 1 thread (grid 1x1x1, block 1x1x1)
+  [PASS] baseline-complete (all blocks ran)
+  [PASS] full block works for this shape
+  [PASS] resume bit-exact for this shape
+[M8] shape 2x2x2 / 128 threads (grid 2x2x2, block 128x1x1)
+  [PASS] baseline-complete (all blocks ran)
+  [PASS] full block works for this shape
+  [PASS] resume bit-exact for this shape
+[M8] shape 1024 / 256 threads (grid 1024x1x1, block 256x1x1)
+  [PASS] baseline-complete (all blocks ran)
+  [PASS] full block works for this shape
+  [PASS] resume bit-exact for this shape
+[M6] stress loop skipped (--quick)
+==================================================
+  RESULT: 5 failed check(s)
+==================================================

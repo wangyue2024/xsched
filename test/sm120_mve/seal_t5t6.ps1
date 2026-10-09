@@ -42,8 +42,11 @@ $sources = @(
     'test/sm120_mve/gen_arrays.py',
     'test/sm120_mve/build.ps1',
     'test/sm120_mve/run_mve.ps1',
+    'test/sm120_mve/build.sh',
+    'test/sm120_mve/run_mve.sh',
     'test/sm120_mve/t5_verify.py',
     'test/sm120_mve/seal_t5t6.ps1',
+    'test/sm120_mve/seal_t5t6.sh',
     'test/sm120_mve/DESIGN.md',
     'test/sm120_mve/T5_REVIEW.md',
     'test/sm120_mve/REPORT.md'

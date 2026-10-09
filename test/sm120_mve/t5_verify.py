@@ -71,24 +71,31 @@ def main():
     r = instrs(arrays['resume_instructions'])
 
     # ---------- R1: bit-exact reproduction from the sealed pipeline ----------
-    print('[R1] reproduction from T4 pipeline')
-    data = bytearray(open(os.path.join(INJ, 'inject_120.cubin'), 'rb').read())
-    src = ex.parse_inject_source(os.path.join(INJ, 'inject.cu'))
-    secs = ex.text_sections(data)
-    off_map = ex.OFFSET_MAPS['sm120']
+    # Needs inject_120.cubin, a build artifact produced by nvcc >= 12.8
+    # (not committed):   cd platforms/cuda/hal/inject && make ARCH=120 bin
+    cubin_path = os.path.join(INJ, 'inject_120.cubin')
+    if not os.path.exists(cubin_path):
+        print('[R1] reproduction from T4 pipeline -- SKIPPED '
+              '(inject_120.cubin absent; needs CUDA >= 12.8)')
+    else:
+        print('[R1] reproduction from T4 pipeline')
+        data = bytearray(open(cubin_path, 'rb').read())
+        src = ex.parse_inject_source(os.path.join(INJ, 'inject.cu'))
+        secs = ex.text_sections(data)
+        off_map = ex.OFFSET_MAPS['sm120']
 
-    instrs_p, _, _ = ex.patch_function(data, 'check_preempt', *secs['check_preempt'],
-                                       src['check_preempt'], off_map)
-    g_expected, _ = ex.tail_trim(instrs_p, 'guardian')
-    ck(list(g_expected) == g, 'guardian == patch(inject_120.cubin) + guardian trim',
-       '%d instrs' % len(g))
+        instrs_p, _, _ = ex.patch_function(data, 'check_preempt', *secs['check_preempt'],
+                                           src['check_preempt'], off_map)
+        g_expected, _ = ex.tail_trim(instrs_p, 'guardian')
+        ck(list(g_expected) == g, 'guardian == patch(inject_120.cubin) + guardian trim',
+           '%d instrs' % len(g))
 
-    instrs_r, _, _ = ex.patch_function(bytearray(open(os.path.join(INJ, 'inject_120.cubin'), 'rb').read()),
-                                       'restore_exec', *secs['restore_exec'],
-                                       src['restore_exec'], off_map)
-    r_expected, _ = ex.tail_trim(instrs_r, 'resume')
-    ck(list(r_expected) == r, 'resume == patch(inject_120.cubin), no trim',
-       '%d instrs' % len(r))
+        instrs_r, _, _ = ex.patch_function(bytearray(open(cubin_path, 'rb').read()),
+                                           'restore_exec', *secs['restore_exec'],
+                                           src['restore_exec'], off_map)
+        r_expected, _ = ex.tail_trim(instrs_r, 'resume')
+        ck(list(r_expected) == r, 'resume == patch(inject_120.cubin), no trim',
+           '%d instrs' % len(r))
 
     # ---------- R2: patched LDC window slots ----------
     print('[R2] debugger-window LDC slots (c[0x0][0x170..0x18C])')
