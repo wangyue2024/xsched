@@ -1,3 +1,12 @@
 # Build artifacts and run logs (evaluation tooling only)
 *.exe
 *.log
+
+# Linux test binaries (built by run_tests.sh)
+/test_unit_registry
+/test_driver_shim
+/test_isolation
+/test_multithread_stress
+/test_destroy_inflight
+/test_ptds_features
+/test_perf_benchmark
