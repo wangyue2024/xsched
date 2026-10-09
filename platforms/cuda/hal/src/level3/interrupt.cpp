@@ -22,7 +22,8 @@ InterruptContext::InterruptContext(CUcontext ctx)
     CUdevice dev;
     CUDA_ASSERT(Driver::CtxGetDevice(&dev));
     trap_handler_ = TarpHandler::Instance(dev);
-    cuXtraGetTrapHandlerInfo(kCtx, &trap_handler_dev_, &trap_handler_size_);
+    XASSERT(trap_handler_ != nullptr, "no trap handler implementation for this architecture");
+    trap_handler_->GetTrapHandlerInfo(kCtx, &trap_handler_dev_, &trap_handler_size_);
     instrument_mem_ = std::make_unique<InstrMemAllocator>(kCtx, dev);
 }
 
@@ -56,13 +57,18 @@ void InterruptContext::InstrumentTrapHandler()
     cuXtraMemcpyHtoD(trap_handler_dev_, trap_handler_host, trap_handler_size_, kOpStream);
 
     cuXtraInvalInstrCache(kCtx);
+    XINFO("trap handler instrumented: dev %#llx size %zu inject %#llx size %zu",
+          (unsigned long long)trap_handler_dev_, trap_handler_size_,
+          (unsigned long long)inject_dev, inject_size);
     free(trap_handler_host);
     free(inject_host);
 }
 
 void InterruptContext::Interrupt()
 {
+    XINFO("triggering trap (ctx %p)", kCtx);
     cuXtraTriggerTrap(kCtx);
+    XINFO("trap triggered");
 }
 
 void InterruptContext::DumpTrapHandler()

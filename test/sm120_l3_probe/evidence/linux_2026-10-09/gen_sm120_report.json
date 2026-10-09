@@ -1,0 +1,123 @@
+{
+  "mode": "generate",
+  "cubin": "platforms/cuda/hal/inject/inject_120.cubin",
+  "source": "platforms/cuda/hal/inject/inject.cu",
+  "arch": "sm120",
+  "functions": [
+    {
+      "func": "check_preempt",
+      "section": ".text.check_preempt",
+      "section_off": "0x2200",
+      "section_size": "0x400",
+      "raw_instrs": 64,
+      "trim": "guardian",
+      "removed": [
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "NOP",
+        "self-spin BRA",
+        "RET.ABS.NODEC R20 (epilogue)"
+      ],
+      "final_instrs": 50,
+      "checks": {
+        "placeholders": 4,
+        "k1_clean": true,
+        "ctrl_preserved": true,
+        "no_residue": true
+      },
+      "replacements": [
+        {
+          "func": "check_preempt",
+          "slot": 1,
+          "addr": 16,
+          "spec": "LDC R4, c[0x0][0x170]",
+          "w0": "0x00005c00ff047b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt",
+          "slot": 2,
+          "addr": 32,
+          "spec": "LDC R5, c[0x0][0x174]",
+          "w0": "0x00005d00ff057b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt",
+          "slot": 22,
+          "addr": 352,
+          "spec": "LDC R6, c[0x0][0x180]",
+          "w0": "0x00006000ff067b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt",
+          "slot": 23,
+          "addr": 368,
+          "spec": "LDC R7, c[0x0][0x184]",
+          "w0": "0x00006100ff077b82",
+          "w1": "0x000fc00000000800"
+        }
+      ]
+    },
+    {
+      "func": "restore_exec",
+      "section": ".text.restore_exec",
+      "section_off": "0x2b00",
+      "section_size": "0x200",
+      "raw_instrs": 32,
+      "trim": "resume",
+      "removed": [],
+      "final_instrs": 32,
+      "checks": {
+        "placeholders": 4,
+        "k1_clean": true,
+        "ctrl_preserved": true,
+        "no_residue": true
+      },
+      "replacements": [
+        {
+          "func": "restore_exec",
+          "slot": 1,
+          "addr": 16,
+          "spec": "LDC R4, c[0x0][0x170]",
+          "w0": "0x00005c00ff047b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "restore_exec",
+          "slot": 2,
+          "addr": 32,
+          "spec": "LDC R5, c[0x0][0x174]",
+          "w0": "0x00005d00ff057b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "restore_exec",
+          "slot": 19,
+          "addr": 304,
+          "spec": "LDC R20, c[0x0][0x178]",
+          "w0": "0x00005e00ff147b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "restore_exec",
+          "slot": 20,
+          "addr": 320,
+          "spec": "LDC R21, c[0x0][0x17c]",
+          "w0": "0x00005f00ff157b82",
+          "w1": "0x000fc00000000800"
+        }
+      ]
+    }
+  ]
+}

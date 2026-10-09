@@ -1,0 +1,10 @@
+[1] slot20 rc=0 handle=0x64dbc8d75190 stub=0x880
+[2] pc=0x73e8a75f5300 size=0x1300
+[3] DtoH got=4864, word@0x880=0x7918 (expect NOP 0x7918)
+[4] instr block alloc = 0x73e8a76f3600
+[5] instr HtoD wrote=4096
+[6] instr DtoH got=64 word0=0xaaaa0000bbbb0000 (expect marker)
+[7] handler HtoD wrote=4864
+[8] handler readback: got=4864 word@0x880=a76f36000000794a 000fea00038073e8
+[8] expected        : a76f36000000794a 000fea00038073e8
+[9] done (handler left patched in this test's ctx, ctx exits now)

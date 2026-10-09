@@ -48,6 +48,8 @@ std::shared_ptr<TarpHandler> TarpHandler::Instance(CUdevice dev)
         return std::make_shared<TarpHandlerSM70>();
     case 86:
         return std::make_shared<TarpHandlerSM86>();
+    case 120: // Blackwell: RTX 50 series (Linux; Windows falls back to Lv2)
+        return std::make_shared<TarpHandlerSM120>();
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return nullptr;
@@ -87,9 +89,8 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
         return std::make_shared<CudaQueueLv2>(stream);
     case 70: // Volta: V100, GV100
     case 86: // Ampere: RTX3050 - RTX 3090 Ti
+    case 120: // Blackwell: RTX 50 series -- trap path via TarpHandlerSM120
         return std::make_shared<CudaQueueLv3Trap>(stream);
-    case 120: // Blackwell: RTX 50 series -- level-2 only (trap is stage three)
-        return std::make_shared<CudaQueueLv2>(stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return std::make_shared<CudaQueueLv1>(stream);
@@ -129,9 +130,8 @@ CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, C
         return CudaQueueLv2::DirectLaunch(kernel, current_ctx, stream);
     case 70:
     case 86:
-        return CudaQueueLv3Trap::DirectLaunch(kernel, current_ctx, stream);
     case 120:
-        return CudaQueueLv2::DirectLaunch(kernel, current_ctx, stream);
+        return CudaQueueLv3Trap::DirectLaunch(kernel, current_ctx, stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return CudaQueueLv1::DirectLaunch(kernel, stream);

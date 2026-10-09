@@ -1,0 +1,12 @@
+[XSCHED INFO @ T 55329 @ 12:44:01.260899] using app-managed scheduler
+[mini7] kernels=64
+[mini7] flag at 0x7bd542000000
+[XSCHED INFO @ T 55329 @ 12:44:01.519961] sm120 trap handler: pc 0x7bd5575f5300, size 0x1300, stub offset 0x880
+[XSCHED INFO @ T 55329 @ 12:44:01.521787] sm120 trap TEST payload active (8 words)
+[XSCHED INFO @ T 55329 @ 12:44:01.521792] sm120 trap handler instrumented: patch 0x7bd5575f5300 -> inject 0x7bd54ee00000 (replaced 0000002002ff7812 003fe4000780c0ff)
+[XSCHED INFO @ T 55329 @ 12:44:01.534696] trap handler instrumented: dev 0x7bd5575f5300 size 4864 inject 0x7bd54ee00000 size 96
+[mini7] launched, err=0
+[mini7] suspending...
+[XSCHED INFO @ T 55329 @ 12:44:01.958037] triggering trap (ctx 0x5e6ea6e14e30)
+[XSCHED INFO @ T 55329 @ 12:44:01.958084] trap triggered
+[WATCHDOG] suspend stuck; flag=0x0 (injection did NOT run)

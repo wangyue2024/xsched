@@ -1,0 +1,6 @@
+[XSCHED INFO @ T 60464 @ 14:16:00.924983] using app-managed scheduler
+[mini5] kernels=64 level=3
+[mini5] xqueue created
+[mini5] launching 64 wait-flag kernels ...
+[mini5] launch err=0 (0=ok)
+[mini5] kernels running (t=0.0ms), suspending...

@@ -1,0 +1,172 @@
+{
+  "mode": "generate",
+  "cubin": "platforms/cuda/hal/inject/inject_120.cubin",
+  "source": "platforms/cuda/hal/inject/inject.cu",
+  "arch": "sm120",
+  "functions": [
+    {
+      "func": "check_preempt_trap",
+      "section": ".text.check_preempt_trap",
+      "section_off": "0x2780",
+      "section_size": "0x380",
+      "raw_instrs": 56,
+      "trim": "none",
+      "removed": [],
+      "final_instrs": 56,
+      "checks": {
+        "placeholders": 5,
+        "k1_clean": true,
+        "ctrl_preserved": true,
+        "no_residue": true
+      },
+      "replacements": [
+        {
+          "func": "check_preempt_trap",
+          "slot": 1,
+          "addr": 16,
+          "spec": "LDC R4, c[0x0][0x170]",
+          "w0": "0x00005c00ff047b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt_trap",
+          "slot": 2,
+          "addr": 32,
+          "spec": "LDC R5, c[0x0][0x174]",
+          "w0": "0x00005d00ff057b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt_trap",
+          "slot": 3,
+          "addr": 48,
+          "spec": "LDC R6, c[0x0][0x180]",
+          "w0": "0x00006000ff067b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt_trap",
+          "slot": 4,
+          "addr": 64,
+          "spec": "LDC R7, c[0x0][0x184]",
+          "w0": "0x00006100ff077b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "check_preempt_trap",
+          "slot": 5,
+          "addr": 80,
+          "spec": "LDC R8, c[0x0][0x188]",
+          "w0": "0x00006200ff087b82",
+          "w1": "0x000fc00000000800"
+        }
+      ]
+    },
+    {
+      "func": "exit_if_idempotent",
+      "section": ".text.exit_if_idempotent",
+      "section_off": "0x2d00",
+      "section_size": "0x280",
+      "raw_instrs": 40,
+      "trim": "none",
+      "removed": [],
+      "final_instrs": 40,
+      "checks": {
+        "placeholders": 11,
+        "k1_clean": true,
+        "ctrl_preserved": true,
+        "no_residue": true
+      },
+      "replacements": [
+        {
+          "func": "exit_if_idempotent",
+          "slot": 1,
+          "addr": 16,
+          "spec": "STL [0xfffe00], R0",
+          "w0": "0xfffe0000ff007387",
+          "w1": "0x000fc00000100800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 2,
+          "addr": 32,
+          "spec": "IMAD.MOV.U32 R0, RZ, RZ, RZ",
+          "w0": "0x000000ffff007224",
+          "w1": "0x000fe200078e00ff"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 3,
+          "addr": 48,
+          "spec": "@P0 MOV R0, 0x1",
+          "w0": "0x0000000100000802",
+          "w1": "0x000fe20000000f00"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 4,
+          "addr": 64,
+          "spec": "STL [0xfffe04], R0",
+          "w0": "0xfffe0400ff007387",
+          "w1": "0x000fc00000100800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 8,
+          "addr": 128,
+          "spec": "LDC R4, c[0x0][0x170]",
+          "w0": "0x00005c00ff047b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 9,
+          "addr": 144,
+          "spec": "LDC R5, c[0x0][0x174]",
+          "w0": "0x00005d00ff057b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 10,
+          "addr": 160,
+          "spec": "LDC R6, c[0x0][0x180]",
+          "w0": "0x00006000ff067b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 11,
+          "addr": 176,
+          "spec": "LDC R7, c[0x0][0x184]",
+          "w0": "0x00006100ff077b82",
+          "w1": "0x000fc00000000800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 26,
+          "addr": 416,
+          "spec": "LDL R0, [0xfffe04]",
+          "w0": "0xfffe0400ff007983",
+          "w1": "0x000fc00000100800"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 27,
+          "addr": 432,
+          "spec": "ISETP.NE.AND P0, PT, R0, RZ, PT",
+          "w0": "0x000000ff0000720c",
+          "w1": "0x004fda0003f05270"
+        },
+        {
+          "func": "exit_if_idempotent",
+          "slot": 28,
+          "addr": 448,
+          "spec": "LDL R0, [0xfffe00]",
+          "w0": "0xfffe0000ff007983",
+          "w1": "0x000fc00000100800"
+        }
+      ]
+    }
+  ]
+}

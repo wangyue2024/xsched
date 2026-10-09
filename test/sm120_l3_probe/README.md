@@ -268,3 +268,126 @@ not discovered. None appear to be trigger candidates.
 | probe_win_trigger_20261003_225339.log | Slot sweep (partial, pre-crash) |
 | probe_win_trigger2_20261003_225610.log | Checkpoint + TSG + safe slots |
 | probe_trigger_20261003_225127.log | TriggerTrap fatal error evidence |
+
+---
+
+## Linux follow-up session (2026-10-09) — sm120 L3 implementation + findings
+
+Environment: same RTX 5060 (sm120), **Linux**, driver 595.99.02 (CUDA 13.2,
+open kernel module), `/dev/nvidiactl` accessible. CUDA 12.9.41 toolkit used
+for all device compilation (`nvcc -ccbin g++-13`; the local CUDA copy needed
+a glibc-C23 `noexcept` compat patch for `sinpi/cospi/rsqrt` declarations).
+
+### What was built (branch worktree, not committed)
+
+| Area | Change |
+|---|---|
+| `hal/arch/sm120.cpp/.h` | `TarpHandlerSM120`: sm120 trap-inject array (40 instrs, generated from `check_preempt_trap` with the sm86 composition recipe), `SetJumpInstruction`, `Instrument` at stub offset **0x880**, and a `GetTrapHandlerInfo` override |
+| `hal/level3/trap.h` | `TarpHandler::GetTrapHandlerInfo` virtual (default = cuxtra Pascal path) |
+| `hal/level3/interrupt.cpp` | uses the virtual getter; L3 diagnostics via XINFO |
+| `hal/arch/arch.cpp` | sm120 → `CudaQueueLv3Trap` on Linux (Windows still Lv2) |
+| `tools/instrument` | inject_120 regenerated with 12.9.41: guardian(50)/resume(32) arrays **bit-identical** to the committed ones; trap arrays generated (`check_preempt_trap` 56, `exit_if_idempotent` 40) |
+
+### GetInfoBlackwell workaround (works, live-verified)
+
+`cuXtraGetTrapHandlerInfo` aborts on sm120 (error 101, same as Windows).
+Replacement implemented in `TarpHandlerSM120::GetTrapHandlerInfo`:
+`cuGetExportTable(CU_ETID_ToolsTrapHandler)` → slot 20 `fn(ctx, out40)`
+→ `ObjGetPc(ctx, out.handle, &pc)` / `ObjGetSize(out.handle, &sz)` via the
+`CU_ETID_ToolsMemory` table (slots 24/25, handle passed **by pointer value**).
+Yields `pc = 0x…5f5300`, `size = 0x1300`, stub offset field `+0x18 = 0x880`.
+
+### Handler reverse engineering (evidence/linux_2026-10-09)
+
+- Handler container = 0x1300 bytes: variant A code `[0,0x880)`, shared return
+  stub `[0x880,0xA00)` (`CCTL.IVALL/MEMBAR.SYS/RET.ABS R12 0x20`), zero pad,
+  variant B at `[0xA80,0x1300)`.
+- The stub starts with two NOPs; every variant-A path reaches it
+  (`@P0 BRA.U 0x880` after the `LOP3 P0=R2&0x20` dispatch, and by fall-through).
+- Patch site chosen: **0x880** (first NOP). Write path verified end-to-end:
+  DtoH → patch → `cuXtraMemcpyHtoD` → read-back is byte-exact.
+
+### Trigger on Linux (works)
+
+`cuXtraTriggerTrap` (RM `GlobalRegsWrite32(0x419e84, bit31)` via nvidiactl
+ioctl) returns instantly for **idle and busy** GPU and leaves the context
+healthy (`final_trigger_probe.log`). This is the piece that is fatally
+blocked on Windows.
+
+### The blocker found: forced trap does not reach the tools handler
+
+With the correctly patched handler (verified read-back) and a successful
+trigger, spinning wait-flag kernels are **not** affected: the injected code
+never runs. A diagnostic minimal payload (store signature to a host-visible
+address) patched at **0x0 / 0x60 / 0x880** all show `sig == 0` on trigger
+(`mini7_off_*.log`), i.e. the trap handler at `pc` is not entered at all.
+
+Hypotheses (next step, T4-style gap):
+1. The slot-20 memobj may be a **template**; the driver may need an explicit
+   arm/install step for forced traps (the zero-returning slots 1/5/8/10/16/22
+   from the Windows sweep are prime candidates for that call).
+2. Driver 595 (CUDA 13.2) may route `TRIGGER_TRAP` differently than 13030.
+3. Trap-context memory-access restrictions could mask a faulted payload —
+   less likely: a faulting payload would kill the warps and unblock suspend.
+
+Until that is resolved, `arch.cpp` routes sm120 to `CudaQueueLv3Trap` on
+Linux for development, but **e2e preemption is not yet functional**; the TSG
+path (`XSCHED_CUDA_LV3_IMPL=TSG`) works on this setup (timeslice ioctl OK).
+
+### Side note
+
+`platforms/cuda/test/main/level.cu` hangs on this Linux setup already at
+level 1 in its runner loop (64-launch + stream-sync storm through the shim);
+minimal reproductions (single-thread, worker-thread, 64-backlog) all pass,
+so the harness issue is separate from L3 and still open.
+
+### Round 2 (same day) — root-cause deep dive: why the forced trap never arrives
+
+Follow-up experiments (evidence in the same directory; test sources `mini9/12/13.cu`,
+`ioctl_log*.c`):
+
+1. **Trigger constants are correct.** Disassembly of Linux cuxtra and a byte scan of
+   `libcuda.so.595` show both use the identical `{reg=0x419e84, val=0x80000000}`
+   write (`cuXtraTriggerTrap` == the driver-internal helper at libcuda+0x487560).
+   The trigger is not the problem.
+
+2. **The handler memobj is a NON-LIVE template.** With a minimal signature payload
+   patched at three offsets (0x0 dispatch / 0x60 save path / 0x880 stub):
+   - RM trigger during 64 spinning blocks: payload never runs (`mini7_off_*.log`).
+   - **Genuine trap** (`brkpt` kernel, `mini9`): kernel dies with
+     `cudaErrorIllegalAddress (700)`, payload never runs either — the trap is
+     handled internally by the driver, not through the slot-20 object.
+   - Same result when the whole flow runs under a real `cuda-gdb -batch` session.
+   Conclusion: on sm120/driver 595 the tools trap-handler image (variant A + stub +
+   variant B) is not the live dispatch target; the sm86-era "patch memobj + write
+   RM bit" recipe cannot work as-is here.
+
+3. **The real activation machinery is the CUDA-debugger attach stack.** An
+   LD_PRELOAD RM-ioctl logger (`ioctl_log2.c`) was used to diff a normal run vs a
+   `cuda-gdb` run of the same binary:
+   - The debugger creates a **dedicated RM client**, allocates a **class-0x83de
+     object** (hParent = device 0x5c000002), and issues a debugger-only RM-control
+     method family `0x83de03xx` (07/0c/15/16/17/18/1f/2a). Payloads captured:
+     `0315/0316` = {new RM handle, region size, host pointer} (module debug-region
+     registration), `0317/0318/0307/031f/032a` = flags/commands, `030c` = 4824-byte
+     structured buffer.
+   - libcuda exports `cudbgDebuggerCapabilities`, `cudbgDebuggerInitialized`,
+     `cudbgEnablePreemptionDebugging`, `cudbgUseExternalDebugger`,
+     `cudbgInitiateDebuggerAttachProcedureFd`; libcudadebugger implements the
+     attach via a protobuf agent protocol ("DebuggeeAttach", fd handshake).
+   - Re-enabling the sm120 trap path therefore requires reproducing (at least) the
+     attach subset of this machinery — a substantially larger RE/implementation
+     task than the sm86-era interface. All raw logs are in this directory
+     (`ioctl_normal.log`, `ioctl_cudbg.log`, `ioctl2_cudbg.log`).
+
+4. **TSG path status.** `SetTimeslice(ctx,0)` write is real (readback = 0;
+   `mini12/13`); however two observations qualify its use on this setup:
+   - A suspended context's own sync can never complete for eternally-spinning
+     kernels (TSG pauses, never kills) — `XQueueSuspend(SyncHwQueue)` is the wrong
+     pattern for TSG L3.
+   - With `XSCHED_CUDA_LV3_IMPL=TSG`, cross-context contention tests
+     (`mini13`, saturated 2048x256 spinning victim) show the default inter-context
+     scheduler already gives a competing context full SM access; timeslice tuning
+     produced no measurable delta on this GPU/driver. The TSG preemption value
+     (and its per-context vs per-channel granularity) needs a multi-process or
+     multi-GPU-device scenario to be exercised meaningfully.

@@ -1,0 +1,12 @@
+[env] NVIDIA GeForce RTX 5060 ctx=0x5e71543f4590
+[P0] cuXtraGetTimeslice = 2048 us (kmod ioctl works)
+[P1] idle cuXtraTriggerTrap ...
+[P1] returned after 0.000s
+[P1] post-idle: current-ctx=same (0x5e71543f4590), cuMemAlloc rc=0 ptr=0x7528ee800000
+[P2] busy cuXtraTriggerTrap ...
+[P2] stream=0x5e71552e2cb0 buf=0x7528d4000000 (rc=0)
+[P2] memset launch rc=0; query=600
+[P2] trigger returned after 0.000s
+[P2] stream sync rc=0 after 0.001s
+[P3] health: ctx alive, alloc rc=0
+[done] trigger probe complete

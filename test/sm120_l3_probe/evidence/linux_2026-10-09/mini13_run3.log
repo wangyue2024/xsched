@@ -1,0 +1,8 @@
+[mini13] ts ctx1=2048 ctx2=2048
+[mini13] baseline (alone)      : 107.4 ms
+[mini13] victim launched; settling 600ms
+[mini13] contended (fair ts)   : 109.1 ms
+[mini13] SetTimeslice(ctx1,0); readback=0 us
+[mini13] contended (ts1=0)     : 107.4 ms
+[RESULT] base=107.4 fair=109.1 preempted=107.4 | speedup_vs_fair=1.02x
+[mini13] DONE

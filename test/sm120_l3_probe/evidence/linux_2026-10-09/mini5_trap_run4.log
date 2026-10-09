@@ -1,0 +1,11 @@
+[XSCHED INFO @ T 54615 @ 12:35:50.940978] using app-managed scheduler
+[mini5] kernels=64 level=3
+[XSCHED INFO @ T 54615 @ 12:35:51.182126] sm120 trap handler: pc 0x7483a75f5300, size 0x1300, stub offset 0x880
+[XSCHED INFO @ T 54615 @ 12:35:51.183473] sm120 trap handler instrumented: patch 0x7483a75f5b80 -> inject 0x74839ee00000 (replaced 0000000000007918 003fe40000000000)
+[XSCHED INFO @ T 54615 @ 12:35:51.195478] trap handler instrumented: dev 0x7483a75f5300 size 4864 inject 0x74839ee00000 size 672
+[mini5] xqueue created
+[mini5] launching 64 wait-flag kernels ...
+[mini5] launch err=0 (0=ok)
+[mini5] kernels running (t=0.0ms), suspending...
+[XSCHED INFO @ T 54615 @ 12:35:51.716825] triggering trap (ctx 0x5b52f9c35e30)
+[XSCHED INFO @ T 54615 @ 12:35:51.716869] trap triggered
