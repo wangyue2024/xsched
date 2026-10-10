@@ -68,10 +68,15 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
     <th align="center">Level-3</th>
   </tr>
   <tr>
-    <td align="center" rowspan="4"><a href="platforms/cuda">CUDA</a></td>
+    <td align="center" rowspan="5"><a href="platforms/cuda">CUDA</a></td>
+    <td align="center">NVIDIA Blackwell GPUs (sm120)</td>
+    <td align="center" rowspan="5">✅</td>
+    <td align="center" rowspan="5">✅</td>
+    <td align="center">✅</td>
+    <td align="center">🔘</td>
+  </tr>
+  <tr>
     <td align="center">NVIDIA Ampere GPUs (sm86)</td>
-    <td align="center" rowspan="4">✅</td>
-    <td align="center" rowspan="4">✅</td>
     <td align="center">🚧</td>
     <td align="center">🚧</td>
   </tr>
