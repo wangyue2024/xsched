@@ -1,0 +1,8 @@
+==================================================
+  Cooperative-groups x XSched Level-2 hazard demo (sm120)
+  cubin: coop_kernel.cubin
+  arrays: guardian 50 instrs / resume 32 instrs (from sm120.cpp)
+==================================================
+[env] NVIDIA GeForce RTX 5060, CC 12.0, SMs=30, cooperative-launch=1, cuLaunchKernelEx=yes
+  [PASS] coop_kernel + setflag_kernel resolved
+[instrument] guardian splice (mirrors InstrumentContext::Instrument)

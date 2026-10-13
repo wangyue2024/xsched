@@ -1,0 +1,26 @@
+==================================================
+  Cooperative-groups x XSched Level-2 hazard demo (sm120)
+  cubin: coop_kernel.cubin
+  arrays: guardian 50 instrs / resume 32 instrs (from sm120.cpp)
+==================================================
+[env] NVIDIA GeForce RTX 5060, CC 12.0, SMs=30, cooperative-launch=1, cuLaunchKernelEx=yes
+  [PASS] coop_kernel + setflag_kernel resolved
+[instrument] guardian splice (mirrors InstrumentContext::Instrument)
+  [PASS] cuXtraGetBinary returned a kernel image
+  [PASS] instruction memory block allocated
+  [PASS] guardian + kernel image uploaded
+  [PASS] resume instructions uploaded
+  [info] entries: orig=0xb0111a800 guardian=0xb0111c600 resume=0xb0111dc00
+[info] occupancy: 12 blocks/SM x 30 SMs -> using 288 blocks
+[info] cooperative-attribute launch accepted
+[S1] guarded full run (flag=0, no interference, grid=288)
+  [info] entered=288 synced=288 timedout=0 blocked=0 markers=288
+  [measure] entry spread over 288 blocks: 0.2 us
+  [PASS] all blocks entered the body
+  [PASS] barrier released the full grid (synced == N)
+  [PASS] no timeout (no missing peers in clean run)
+  [PASS] all blocks completed
+  [PASS] no block was blocked at the guardian
+==================================================
+  RESULT: 0 failed check(s)
+==================================================

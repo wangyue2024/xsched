@@ -1,0 +1,23 @@
+==================================================
+  Cooperative-groups x XSched Level-2 hazard demo (sm120)
+  cubin: coop_kernel.cubin
+  arrays: guardian 50 instrs / resume 32 instrs (from sm120.cpp)
+==================================================
+[env] NVIDIA GeForce RTX 5060, CC 12.0, SMs=30, cooperative-launch=1, cuLaunchKernelEx=yes
+  [PASS] coop_kernel + setflag_kernel resolved
+[instrument] guardian splice (mirrors InstrumentContext::Instrument)
+  [PASS] cuXtraGetBinary returned a kernel image
+  [PASS] instruction memory block allocated
+  [PASS] guardian + kernel image uploaded
+  [PASS] resume instructions uploaded
+  [info] entries: orig=0xb0111a800 guardian=0xb0111c600 resume=0xb0111dc00
+[info] occupancy: 24 blocks/SM x 30 SMs -> using 576 blocks
+[info] cooperative-attribute launch accepted
+[E2] race amplifier: flag set during the entry window
+  [info] N=576, sweep 0..3000 ns x 6 repeats (cap 400 iters)
+  [E2] outcomes: partial_hits=0 all_entered=281 all_blocked=7 no_flag=0 errors=0 (iters=288, 1.5 s)
+  [E2] no partial window hit in 288 iterations (see spread measurement in S1; the window exists but the landing time missed it this run)
+  [E2] (soft) window not hit this run; E1 already proves the condition deterministically
+==================================================
+  RESULT: 0 failed check(s)
+==================================================
