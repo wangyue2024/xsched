@@ -1,0 +1,35 @@
+l2_check.exe : [XSCHED INFO @ T 22100 @ 19:49:21.793579] using app-managed sche
+duler
+所在位置 D:\1file\Desktop\code\xsched\test\l2_check_demo\run.ps1:42 字符: 8
++ $out = & "$Dir\work\l2_check.exe" 2>&1 | Out-String
++        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([XSCHED INFO @ ...naged scheduler 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+==================================================
+  L2 check: does Level-2 preemption work correctly?
+  grid=2048 blocks x 128 threads
+==================================================
+[env] NVIDIA GeForce RTX 5060 (CC 12.0)
+  [PASS] Level-2 XQueue created (kPreemptLevelDeactivate)
+[calibrate] round 0: spin=16777216 -> 231.5 ms; target 15 ms/block -> spin=1087243
+[calibrate] round 1: spin=1087243 -> 15.2 ms; target 15 ms/block -> spin=1076371
+[base] baseline run (no suspend)
+  [PASS] baseline: all blocks completed
+  [PASS] baseline: golden recorded
+  [info] baseline wall time: 353.1 ms
+[L2] preemption run: 8 kernels x 256 blocks -> sleep 10 ms -> Suspend -> Resume
+  [info] t=12.4 ms (mid-flight): 30/2048 blocks done
+  [info] Suspend(sync) took 29.2 ms; 256/2048 blocks done
+  [PASS] I1 withdraw: suspend left the kernel partially done (0 < done < N)
+  [info] +20 ms while suspended: 256/2048 blocks done
+  [PASS] I2 frozen: no block completed while suspended
+  [info] Resume -> sync took 299.8 ms; total run 375.1 ms
+  [PASS] resume: all blocks completed
+  [PASS] I3a correct: results bit-exact vs baseline
+  [info] per-block body executions: miss=0 duplicate=0
+  [PASS] I3b exactly-once: every block executed exactly once
+==================================================
+  RESULT: 0 failed check(s)
+==================================================
