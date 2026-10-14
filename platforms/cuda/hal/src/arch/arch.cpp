@@ -89,8 +89,12 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
         return std::make_shared<CudaQueueLv2>(stream);
     case 70: // Volta: V100, GV100
     case 86: // Ampere: RTX3050 - RTX 3090 Ti
-    case 120: // Blackwell: RTX 50 series -- trap path via TarpHandlerSM120
         return std::make_shared<CudaQueueLv3Trap>(stream);
+    case 120: // Blackwell: RTX 50 series -- trap path unavailable on 595+ (see
+              // test/sm120_l3_probe/ATTACH_REPLAY_PLAN.md Round-2: the tools trap
+              // handler is a non-live template and no user-space mechanism can
+              // stop a running kernel); use the TSG timeslice path instead.
+        return std::make_shared<CudaQueueLv3Tsg>(stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return std::make_shared<CudaQueueLv1>(stream);
@@ -130,8 +134,9 @@ CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, C
         return CudaQueueLv2::DirectLaunch(kernel, current_ctx, stream);
     case 70:
     case 86:
-    case 120:
         return CudaQueueLv3Trap::DirectLaunch(kernel, current_ctx, stream);
+    case 120:
+        return CudaQueueLv3Tsg::DirectLaunch(kernel, stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return CudaQueueLv1::DirectLaunch(kernel, stream);

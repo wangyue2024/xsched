@@ -291,3 +291,22 @@ cuda-gdb -batch -ex "set exec-wrapper env LD_PRELOAD=.../ioctl_log2.so IOCTL_LOG
 2. Linux 上 `ObjGetPc` 的 `pc` 字段返回 0（Windows 13030 返回 0x880），语义差异待查（不影响当前工作路径）；
 3. `0x83de030c` 的 4824 字节结构尚未逐字段解析；
 4. TSG 的"按上下文 vs 按通道"时间片粒度需在双进程场景确认。
+
+--
+
+## 附录：2026-10-14 深夜 Round-1/2（attach 复刻 → 平台边界封定 → 集成落地）
+
+本附录对应 §6「复刻 attach 最小子集」的完整执行结果，全部细节与证据见
+`test/sm120_l3_probe/ATTACH_REPLAY_PLAN.md`（含 Round-1/2 章节）与 `attach_replay/` 目录：
+
+1. **会话机制**：0x83de（KernelSMDebuggerSession）由 `cuCtxCreate` 自动创建；33 个方法全解；
+   可用配方 = libcuda-fd + 主 client + 会话对象；DebugRead/WriteMemory、调试模式、
+   上下文门控（空闲态 0317，单向 kill、~300ms 异步激活）全部实机验证。
+2. **平台判决**：**运行中内核的微秒级中断/停止在本平台（sm120+595）对一切用户态手段不可达**——
+   含会话 suspend、stop/run trigger 全家族、RM 触发、trap 注入（武装后仅异常路径变化）、
+   以及 **cuda-gdb 本体**（真中断下 `info cuda threads` 仍为空、kernel 保持 Active）。
+   硬件 CILP=1 由调度器驱动，非用户态可强制。
+3. **集成落地**：`arch.cpp` sm120 默认改为 `CudaQueueLv3Tsg`（已重建）；
+   `tsg_smoke` 端到端验证 rc=0/PASS，ioctl 层见 `0xa06c0104/0xa06c0103` 实际下发。
+4. **结论**：L3 的正确形态 = 边界抢占 + 时间片协同（L1/L2 强化 + TSG），
+   全部负面路径已文档化，避免重复投入。

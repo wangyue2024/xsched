@@ -1,0 +1,145 @@
+[  0.000] === l3ctl phase-B probe ===
+[interpose:zero-alloc] r=0 post=00000000 00000000 9401d0c1
+[interpose] client[0]=0xc1d00194 (zero-alloc; post+12=0xc1d00194)
+[interpose:zero-alloc] r=0 post=00000000 00000000 9501d0c1
+[interpose] client[1]=0xc1d00195 (zero-alloc; post+12=0xc1d00195)
+[  0.093] [bisect] after cuInit: has83de=0x0 objs=10
+[interpose] TSG=0x5c000013 (timeslice cmd 0xa06c0101)
+[  0.181] [bisect] after ctxCreate: has83de=0x5c000073 objs=96
+[  0.181] [bisect] after moduleLoad: has83de=0x5c000073 objs=96
+[  0.182] ctx=0x5706446a75a0 stream=0x570645594ff0 clk=2527 MHz
+[  0.182] [learn:before-cuxtra] client=0xc1d00194 tsg_client=0xc1d00195 tsg=0x5c000013 device=0x5c000002 objs=96 maxidx=0x7e
+[  0.182]    before-cuxtra obj[7] = 0x5c000008 class=0x90f1
+[  0.182]    before-cuxtra obj[8] = 0x5c000009 class=0x90f1
+[  0.182]    before-cuxtra obj[9] = 0x5c00000b class=0x50a0
+[  0.182]    before-cuxtra obj[87] = 0x5c000073 class=0x83de
+[  0.182] [has83de] before-cuxtra: 0x5c000073
+[  0.182] cuXtraGetTimeslice = 2048 us
+[  0.182] [has83de] after-cuxtra: 0x5c000073
+[  0.182] [learn] using libcuda fd=31 for RM calls
+[  0.182] [learn] client=0xc1d00195 tsg=0x5c000013 device=0x5c000002 objs=96 maxidx=0x7e
+[  0.182]    obj[0] = 0x5c000001 class=0xcb33
+[  0.182]    obj[1] = 0x5c000002 class=0x80
+[  0.182]    obj[2] = 0x5c000003 class=0x2080
+[  0.182]    obj[3] = 0x5c000004 class=0x2081
+[  0.182]    obj[4] = 0x5c000005 class=0xc661
+[  0.182]    obj[5] = 0x5c000006 class=0xc661
+[  0.182]    obj[6] = 0x5c000007 class=0xde
+[  0.182]    obj[7] = 0x5c000008 class=0x90f1
+[  0.182]    obj[8] = 0x5c000009 class=0x90f1
+[  0.182]    obj[9] = 0x5c00000b class=0x50a0
+[  0.182]    obj[10] = 0x5c00000c class=0x40
+[  0.182]    obj[11] = 0x5c00000f class=0x40
+[  0.182]    obj[12] = 0x5c000010 class=0x40
+[  0.182]    obj[13] = 0x5c000011 class=0x40
+[  0.182]    obj[14] = 0x5c000013 class=0xa06c
+[  0.182]    obj[15] = 0x5c000014 class=0x9067
+[  0.182]    obj[16] = 0x5c000015 class=0x40
+[  0.182]    obj[17] = 0x5c000017 class=0x3e
+[  0.182]    obj[18] = 0x5c000019 class=0x3e
+[  0.182]    obj[19] = 0x5c00001a class=0xc96f
+[  0.182]    obj[20] = 0x5c00001b class=0xcec0
+[  0.182]    obj[21] = 0x5c00001c class=0xcab5
+[  0.182]    obj[22] = 0x5c00001d class=0x3e
+[  0.182]    obj[23] = 0x5c00001f class=0x3e
+[  0.182]    obj[24] = 0x5c000020 class=0xc96f
+[  0.182]    obj[25] = 0x5c000021 class=0xcec0
+[  0.182]    obj[26] = 0x5c000022 class=0x3e
+[  0.182]    obj[27] = 0x5c000023 class=0xc96f
+[  0.182]    obj[28] = 0x5c000024 class=0xcec0
+[  0.182]    obj[29] = 0x5c000025 class=0xcab5
+[  0.182]    obj[30] = 0x5c000026 class=0x3e
+[  0.182]    obj[31] = 0x5c000027 class=0xc96f
+[  0.182]    obj[32] = 0x5c000028 class=0xcec0
+[  0.182]    obj[33] = 0x5c000029 class=0x3e
+[  0.182]    obj[34] = 0x5c00002a class=0xc96f
+[  0.182]    obj[35] = 0x5c00002b class=0xcec0
+[  0.182]    obj[36] = 0x5c00002c class=0xcab5
+[  0.182]    obj[37] = 0x5c00002d class=0x3e
+[  0.182]    obj[38] = 0x5c00002e class=0xc96f
+[  0.182]    obj[39] = 0x5c00002f class=0xcec0
+[  0.182]    obj[40] = 0x5c000030 class=0x3e
+[  0.182]    obj[41] = 0x5c000031 class=0xc96f
+[  0.182]    obj[42] = 0x5c000032 class=0xcec0
+[  0.182]    obj[43] = 0x5c000033 class=0xcab5
+[  0.182]    obj[44] = 0x5c000034 class=0x3e
+[  0.182]    obj[45] = 0x5c000035 class=0xc96f
+[  0.182]    obj[46] = 0x5c000036 class=0xcec0
+[  0.182]    obj[47] = 0x5c000037 class=0x79
+[  0.182]    obj[48] = 0x5c000038 class=0xa06c
+[  0.182]    obj[49] = 0x5c000039 class=0x3e
+[  0.182]    obj[50] = 0x5c00003a class=0xc96f
+[  0.182]    obj[51] = 0x5c00003b class=0xcab5
+[  0.182]    obj[52] = 0x5c00003c class=0x3e
+[  0.182]    obj[53] = 0x5c00003d class=0xc96f
+[  0.182]    obj[54] = 0x5c00003e class=0xcab5
+[  0.182]    obj[55] = 0x5c00003f class=0x3e
+[  0.182]    obj[56] = 0x5c000040 class=0xc96f
+[  0.182]    obj[57] = 0x5c000041 class=0xcab5
+[  0.182]    obj[58] = 0x5c000042 class=0x3e
+[  0.182]    obj[59] = 0x5c000043 class=0xc96f
+[  0.182]    obj[60] = 0x5c000044 class=0xcab5
+[  0.182]    obj[61] = 0x5c000045 class=0x79
+[  0.182]    obj[62] = 0x5c000046 class=0xa06c
+[  0.182]    obj[63] = 0x5c000047 class=0x3e
+[  0.182]    obj[64] = 0x5c000048 class=0xc96f
+[  0.182]    obj[65] = 0x5c000049 class=0xcab5
+[  0.182]    obj[66] = 0x5c00004a class=0x3e
+[  0.182]    obj[67] = 0x5c00004b class=0xc96f
+[  0.182]    obj[68] = 0x5c00004c class=0xcab5
+[  0.182]    obj[69] = 0x5c00004d class=0x3e
+[  0.182]    obj[70] = 0x5c00004e class=0xc96f
+[  0.182]    obj[71] = 0x5c00004f class=0xcab5
+[  0.182]    obj[72] = 0x5c000050 class=0x3e
+[  0.182]    obj[73] = 0x5c000051 class=0xc96f
+[  0.182]    obj[74] = 0x5c000052 class=0xcab5
+[  0.182]    obj[75] = 0x5c000053 class=0x79
+[  0.182]    obj[76] = 0x5c000054 class=0x3e
+[  0.182]    obj[77] = 0x5c000056 class=0x40
+[  0.182]    obj[78] = 0x5c000058 class=0x40
+[  0.182]    obj[79] = 0x5c00005a class=0x3e
+[  0.182]    obj[80] = 0x5c00005e class=0x40
+[  0.182]    obj[81] = 0x5c000060 class=0x40
+[  0.182]    obj[82] = 0x5c000064 class=0x40
+[  0.182]    obj[83] = 0x5c000069 class=0x3e
+[  0.182]    obj[84] = 0x5c00006b class=0x40
+[  0.182]    obj[85] = 0x5c00006d class=0x40
+[  0.182]    obj[86] = 0x5c00006f class=0x40
+[  0.182]    obj[87] = 0x5c000073 class=0x83de
+[  0.182]    obj[88] = 0x5c000074 class=0x3e
+[  0.182]    obj[89] = 0x5c000076 class=0x40
+[  0.182]    obj[90] = 0x5c000078 class=0x40
+[  0.182]    obj[91] = 0x5c00007a class=0x79
+[  0.182]    obj[92] = 0x5c00007b class=0x79
+[  0.182]    obj[93] = 0x5c00007c class=0x79
+[  0.182]    obj[94] = 0x5c00007d class=0x79
+[  0.182]    obj[95] = 0x5c00007e class=0x40
+[  0.182] [announce] 0xD04 {cl,1,3/4} rc=0,0
+[  0.182] [session] hObjHint=0x5c00007f
+[  0.182] [session] variant0 ({0,client,tsg,0}) rc=0 hObj=0x5c00007f
+[  0.182] [session] *** SESSION CREATED: 0x5c00007f ***
+[  0.182] [prelude] 031f=1 rc=87  0307=1 rc=87  032a=1 rc=87
+[  0.283] [e21] idle(pre-sync=0) GATE rc=0 -> launch P rc=719 (719 GATED!)
+[  0.683] [e21] t=0.50 sA(P) query=719
+[  0.784] [e21] UNGATE rc=0 -> launch Q rc=719 (?)
+[  2.284] [e21] t=2.10 sB(Q) query=719 sync=719
+[  2.284] [e21] VERDICT: idle_gate=YES recover=no
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] --- baseline run (3s spin, no suspend) ---
+[  2.284] baseline: launch failed
+[  2.284] [e9] pre-session=0x5c000073 clients=0xc1d00194/0xc1d00195
+[  2.284] [e9] launch rc=719
+[  2.785] [e9] t=0.50 SUSPEND rc=0
+[  3.785] [e9] t=1.50 (after 1s hold) query=719 (ERR)
+[  5.285] [e9] t=3.00 (after 2.5s hold) query=719
+[  5.286] [e9] t=3.00 RESUME rc=0
+[  5.286] [e9] sync=719 elapsed=3.002s (baseline=-1.000s; 预期 ~5.0s => 挂起生效)
+[  5.287] cleanup: 031f=0, free rc=0
+[  5.287] === l3ctl done ===
