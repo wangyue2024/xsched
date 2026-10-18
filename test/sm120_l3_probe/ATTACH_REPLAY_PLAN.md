@@ -1,5 +1,8 @@
 # sm120 Linux L3：调试器 attach 子集复刻 —— 开发流程（2026-10-14）
 
+
+> **措辞修订（2026-10-19）**：本档案早期版本使用了"判死 / 物理不可达 / 能力边界 / 避免重复投入"等定性词。这些结论的适用范围仅限**单机 RTX 5060 + 驱动 595.99.02**，未经跨架构、跨驱动代际对照，现已统一改为"在本机条件下未能走通 / 我没能找到用户态手段"。**所有数据、表格取值、日志引用与实验记录均未修改。**
+
 > 承接 `L3_LINUX_REPORT_ZH.md` §6。本轮目标：在 Linux 上打通 L3 抢占的**活跃机制**——
 > 复刻 CUDA 调试器 attach 栈的最小必要子集，把 sm120 的 trap/挂起能力变成可在 xsched 内使用的原语。
 > 本文件同时是**设计文档 + 逆向成果落盘**。
@@ -37,6 +40,8 @@
 | 0x83de032a/032b | DebugSet/GetModeMMUGccDebug | - | attach 中 =1 |
 
 **关键结论：cuda-gdb 暂停运行中内核 = `DebugSuspendContext(0317)` 一条 RM_CONTROL！恢复 = `0318`。**
+
+> ⚠️ **更正（见下文 R1.3）**：此结论已被推翻。`0317` 挂起期间运行中的永旋内核计数器持续增长（`0315` 实测），cuda-gdb 完整 attach 会话下同样不停止运行中内核（spin2 对照）。**mid-kernel 停止不是 `DebugSuspendContext` 的语义**，真正的停止机制在本机未能找到。
 
 ### 0.2 内核侧机制（nv-kernel.o 符号 + 反汇编）
 
@@ -175,7 +180,7 @@ RM_CONTROL(NVOS54) 即可：
 
 --
 
-# Round-2 最终判定与 L3 设计（2026-10-14 夜）—— 平台能力边界封定
+# Round-2 阶段小结与 L3 设计（2026-10-14 夜）—— 本机条件下的验证结果
 
 > 证据：attach_replay/e17c.txt e18.txt e19.txt e20.txt e21.txt e22b.txt e23b.txt、
 > mini7b（触发判定）、mini9（brkpt 判定）、arm_modes.so、fifo SIGINT/cuda-gdb 对照。
@@ -209,7 +214,7 @@ RM_CONTROL(NVOS54) 即可：
 | DebugRead/WriteMemory（0315/0316）| ✅ rc=0，写读回一致 | e10b |
 | 调试模式（031f/0307/032a）、异常掩码（0309）| ✅ rc=0；武装后 brkpt 干净终止 | arm_modes/mini9 |
 | 上下文门控（空闲态 0317）| ✅ 确定性；**单向 kill** | E21/E23b |
-| **运行中内核的中段停止/抢占** | ❌ **一切用户态手段不可达（含 cuda-gdb）** | R2.1 全表 |
+| **运行中内核的中段停止/抢占** | ❌ **本机未能找到可用的用户态手段（含 cuda-gdb）** | R2.1 全表 |
 | TSG 时间片控制（0xA06C0103）| ✅ 写入有效；硬件调度器公平（用户 mini13）| 10/09 报告 |
 | RM trap 触发 + handler 注入 | ❌（handler 非活体；武装不改）| mini7b/mini9 |
 
@@ -228,8 +233,8 @@ RM_CONTROL(NVOS54) 即可：
 5. 遗留可选探索（投入产出比低）：cudbg API 直调（CUDBGAPI.suspendDevice）在 Linux 的可行性；
    GSP 侧 stop-trigger 参数语义（需固件逆向）。
 
-**结论：本平台的"微秒级中断式 L3"物理不可达；设计的正确形态是边界抢占 + 时间片协同，
-文档化全部负面结论与证据链，避免后续重复投入。**
+**结论：在本机（RTX 5060 + 595）上"微秒级中断式 L3"未能走通；当前采用的形态是边界抢占 + 时间片协同，
+文档化全部未走通的路径与证据链，供后续参考。**
 
 ## R2.5 集成落地与验证（xsched 侧，已完成）
 
@@ -245,4 +250,4 @@ RM_CONTROL(NVOS54) 即可：
 3. 回归：`xsched/xsched.h` 的 XQueue API 语义（level-3 建队、suspend/resume 无同步标志）全部 rc=0。
    （`platforms/cuda/test/main/level.cu` 在本环境 L1 即挂起的已知 harness 问题与本改动无关，未涉及。）
 
-**至此：Linux sm120 的 XSched L3 完成"设计 + 实现接线 + 验证"闭环（能力边界见 R2.3/R2.4）。**
+**至此：Linux sm120 的 XSched L3 完成"设计 + 实现接线 + 验证"闭环（本机验证结果见 R2.3/R2.4）。**

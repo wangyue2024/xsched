@@ -1,5 +1,8 @@
 # XSched sm120 Level-3 抢占开发报告（Linux）
 
+
+> **措辞修订（2026-10-19）**：本档案早期版本使用了"判死 / 物理不可达 / 能力边界 / 避免重复投入"等定性词。这些结论的适用范围仅限**单机 RTX 5060 + 驱动 595.99.02**，未经跨架构、跨驱动代际对照，现已统一改为"在本机条件下未能走通 / 我没能找到用户态手段"。**所有数据、表格取值、日志引用与实验记录均未修改。**
+
 > 版本：2026-10-09　分支：`sm120-level3-probe`　硬件：NVIDIA RTX 5060（sm120 / Blackwell，CC 12.0）
 > 驱动：595.99.02（CUDA 13.2，开源内核模块）　系统：Linux，GPU 同时驱动显示
 > 关联文档：`test/sm120_l3_probe/README.md`（英文，含 Windows 探针与 Linux 两轮实验原始记录）
@@ -302,11 +305,11 @@ cuda-gdb -batch -ex "set exec-wrapper env LD_PRELOAD=.../ioctl_log2.so IOCTL_LOG
 1. **会话机制**：0x83de（KernelSMDebuggerSession）由 `cuCtxCreate` 自动创建；33 个方法全解；
    可用配方 = libcuda-fd + 主 client + 会话对象；DebugRead/WriteMemory、调试模式、
    上下文门控（空闲态 0317，单向 kill、~300ms 异步激活）全部实机验证。
-2. **平台判决**：**运行中内核的微秒级中断/停止在本平台（sm120+595）对一切用户态手段不可达**——
+2. **本机实测结果**：**运行中内核的微秒级中断/停止，在本机（sm120+595）上我没能用任何用户态手段实现**——
    含会话 suspend、stop/run trigger 全家族、RM 触发、trap 注入（武装后仅异常路径变化）、
    以及 **cuda-gdb 本体**（真中断下 `info cuda threads` 仍为空、kernel 保持 Active）。
    硬件 CILP=1 由调度器驱动，非用户态可强制。
 3. **集成落地**：`arch.cpp` sm120 默认改为 `CudaQueueLv3Tsg`（已重建）；
    `tsg_smoke` 端到端验证 rc=0/PASS，ioctl 层见 `0xa06c0104/0xa06c0103` 实际下发。
 4. **结论**：L3 的正确形态 = 边界抢占 + 时间片协同（L1/L2 强化 + TSG），
-   全部负面路径已文档化，避免重复投入。
+   全部未走通的路径已文档化，供后续参考。
