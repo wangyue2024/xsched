@@ -20,6 +20,21 @@ Client::~Client()
     http_client_ = nullptr;
 }
 
+XResult Client::SetProcessPreempt(PID pid, int action, int &state)
+{
+    Json::Value request;
+    request["pid"] = (Json::Int64)pid;
+    request["action"] = action;
+
+    Json::Value response;
+    std::string request_str = Json::writeString(json_writer_, request);
+    XResult res = GetResponse(http_client_->Post("/l3", request_str.c_str(), "application/json"),
+                              response);
+    if (res != kXSchedSuccess) return res;
+    state = response.isMember("state") ? response["state"].asInt() : -1;
+    return kXSchedSuccess;
+}
+
 XResult Client::SendHint(const Json::Value &request)
 {
     Json::Value response;

@@ -29,6 +29,12 @@ InstrumentContext::InstrumentContext(CUcontext ctx): kCtx(ctx)
     CUdevice dev;
     CUDA_ASSERT(Driver::CtxGetDevice(&dev));
     guardian_ = Guardian::Instance(dev);
+    if (getenv("XSCHED_SM120_TRAP_MIN_CTX") != nullptr) {
+        // Diagnostic: bisect which cuXtra setup turns the sm120 0x83de0317
+        // from "trap delivered to the handler" into "in-flight work cancelled".
+        XINFO("InstrumentContext: minimal mode (no instr mem / preempt buffer)");
+        return;
+    }
     instr_mem_ = std::make_unique<InstrMemAllocator>(kCtx, dev);
     preempt_buf_ = std::make_unique<ResizableBuffer>(dev);
     // clear the preempt buffer
@@ -60,6 +66,9 @@ std::shared_ptr<InstrumentContext> InstrumentContext::Instance(CUcontext ctx)
 CUresult InstrumentContext::Launch(std::shared_ptr<CudaKernelCommand> kernel,
                                    CUstream stream, LaunchType type)
 {
+    if (getenv("XSCHED_CUDA_LOG_LAUNCH") != nullptr)
+        XINFO("InstrumentContext::Launch idx=%ld type=%d stream=%p",
+              (long)kernel->GetIdx(), (int)type, (void *)stream);
     char args_buf[28];
     uint64_t *preempt_buf = (uint64_t *)(args_buf +  0); // 1st arg: preempt buffer addr
     uint64_t *guardian    = (uint64_t *)(args_buf +  8); // 2nd arg: guardian entry point
@@ -75,9 +84,14 @@ CUresult InstrumentContext::Launch(std::shared_ptr<CudaKernelCommand> kernel,
         memset(args_buf, 0, sizeof(args_buf));
         *preempt_buf = preempt_buf_->Ptr(); // use default (empty) preempt buffer
 
+        if (getenv("XSCHED_CUDA_LOG_LAUNCH"))
+            XINFO("instr launch(orig): idx=%ld locking", (long)kernel->GetIdx());
         launch_mtx_.lock();
         cuXtraSetDebuggerParams(kernel->kFuncHandle, args_buf, sizeof(args_buf));
         CUresult ret = kernel->LaunchWrapper(stream);
+        if (getenv("XSCHED_CUDA_LOG_LAUNCH"))
+            XINFO("instr launch(orig): idx=%ld launched ret=%d",
+                  (long)kernel->GetIdx(), (int)ret);
         launch_mtx_.unlock();
         return ret;
     }
@@ -90,10 +104,15 @@ CUresult InstrumentContext::Launch(std::shared_ptr<CudaKernelCommand> kernel,
                             ? entry_point_resume_ // launch to resume
                             : kernel->entry_point_guardian;
     
+    if (getenv("XSCHED_CUDA_LOG_LAUNCH"))
+        XINFO("instr launch: idx=%ld type=%d locking", (long)kernel->GetIdx(), (int)type);
     launch_mtx_.lock();
     cuXtraSetDebuggerParams(kernel->kFuncHandle, args_buf, sizeof(args_buf));
     cuXtraSetEntryPoint(kernel->kFuncHandle, entry_point);
     CUresult ret = kernel->LaunchWrapper(stream);
+    if (getenv("XSCHED_CUDA_LOG_LAUNCH"))
+        XINFO("instr launch: idx=%ld type=%d launched ret=%d",
+              (long)kernel->GetIdx(), (int)type, (int)ret);
     cuXtraSetEntryPoint(kernel->kFuncHandle, kernel->entry_point_original);
     launch_mtx_.unlock();
 
@@ -184,6 +203,13 @@ void InstrumentManager::Deactivate()
 {
     // set global_exit_flag to 1
     CUDA_ASSERT(Driver::MemsetD32Async(preempt_buf_ptr_, 1, 1, op_stream_));
+    if (getenv("XSCHED_SM120_TRAP_CMD_WORD") != nullptr) SetTrapCommand(2);
+}
+
+void InstrumentManager::SetTrapCommand(uint32_t cmd)
+{
+    CUDA_ASSERT(Driver::MemsetD32Async(preempt_buf_ptr_ + sizeof(uint32_t), cmd, 1, op_stream_));
+    CUDA_ASSERT(Driver::StreamSynchronize(op_stream_));
 }
 
 uint64_t InstrumentManager::Reactivate()

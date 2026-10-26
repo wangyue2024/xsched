@@ -89,6 +89,14 @@ target_link_libraries(xserver PRIVATE
     service_common
 )
 
+# Level-3 debugger backend (process level interrupt via an external cuda-gdb
+# agent).  Only available when the CUDA platform is being built.
+if(TARGET halcuda)
+    target_link_libraries(xserver PRIVATE halcuda)
+    target_compile_definitions(xserver PRIVATE XSCHED_L3_GDB_BACKEND=1)
+    message(STATUS "xserver: level-3 GDB backend enabled")
+endif()
+
 set_target_properties(xserver PROPERTIES
     INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib
     BUILD_WITH_INSTALL_RPATH TRUE

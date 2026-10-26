@@ -289,3 +289,58 @@ The artifacts of XSched are published on [Github](https://github.com/XpuOS/xsche
 
 - For technical questions and feature requests, please submit via GitHub [Issues](https://github.com/XpuOS/xsched/issues)
 - For collaborations and partnerships, please reach out at [rongchen@sjtu.edu.cn](mailto:rongchen@sjtu.edu.cn)
+
+## Blackwell sm120 Level-3 (Linux) status
+
+This branch carries the sm120 Level-3 work (driver 595.99.02, RTX 5060).
+
+- **Usable L3 preemption: GDB backend.** `XSCHED_SM120_L3_BACKEND=GDB` makes the
+  runtime accept an external `cuda-gdb` agent; the scheduler-side
+  `GdbInterruptContext` (also exposed via `xcli l3 -x <pid> -s/-q/-r` and
+  `l3ctl`) suspends/resumes a running process in ~116 ms and hands the GPU to
+  other work.
+- **Experimental: in-context RM trap backend.** `XSCHED_SM120_L3_BACKEND=TRAP`
+  plus `XSCHED_SM120_TRAP_SHM`/`XSCHED_SM120_TRAP_AGENT` engages
+  `platforms/cuda/hal/src/level3/trap_sm120.cpp` + the `l3agent` tool. The
+  trap-injection primitive itself is validated (RM `0x83de0317` reaches the
+  live `.text.traphandler` on a plain CUDA context without any debugger —
+  signature observed, `reason=0x1` — and a redirect of `TRAP_RETURN_PC`
+  kills a plain kernel cleanly; see `test/sm120_l3_trap_v2/run_l3kill.sh`).
+  On an XSched-managed context the same call stops a running kernel in
+  **27-30 ms** (counter frozen, `run_l3qspin.sh suspend`), and the queue can
+  replay the killed kernel (`run_l3qspin.sh kill`). It is **not**
+  production-ready: the stopped kernel cannot be resumed in place — every
+  RM-side combination (0317{0,0}/{1,0}, 0318, resume pump, command word
+  2/1, session release, original-entry replay, fresh launches) was tried,
+  and a debugger-side agent is required to restore the driver's CILP state.
+  See FINDINGS v2.7-v4.1 (§15-§24). The last candidate channel — the driver's
+  own preemption buffer (command word `+4`, `preempt_idx +8`) — was measured
+  directly in the 0317 trap: all three words are **0**, while the same buffer
+  is readable there (the earlier faults were launch traps, `reason=0x8`;
+  0317 traps carry `reason=0x1`). So the driver does not publish a request or
+  target on this path; it is written only by the real debugger-suspend path.
+  See FINDINGS §52.
+- **A/B result (2026-10-26): the paper's L3 works on sm86/570, not on sm120/595.**
+  The upstream `XpuOS/xsched` queue-based L3 (`TarpHandlerSM86::Instrument` +
+  `cuXtraTriggerTrap`, `0x419e84` bit31 via `0x20800122`) was built and run on a
+  rented RTX 3090 (sm86, driver 570.124.04): `level 3` preempt p50 ≈ **229 µs**,
+  restore ≈ 90 µs. On sm120/595 the same control is silently skipped by the
+  boot-time `pGpu+0x911` gate, so only RM 0317 (27 ms) or the GDB backend
+  (116 ms) are available. A100/550 exposes regops but sm80 is not in the
+  upstream TarpHandler support list. Evidence:
+  `test/sm120_l3_trap_v2/evidence/ab_ampere/`; see FINDINGS §49.
+
+- **Latest trap findings (v6.8, FINDINGS §51-§52).** The injected handler can read its
+  own `kernel_idx` (`c[0x180]`) and `killable` (`c[0x188]`); in the current configuration
+  `0317` reports `reason=0x1` while a launch trap reports `0x8`, so the event is
+  distinguishable (but there is still no per-suspend target id). The driver preemption
+  buffer reads back all zeros under `0317`, and a trap-side `ST` to it does not fault but
+  is not shared with the driver; a bare `EXIT` breaks the driver trap state machine and
+  the replay. See `FINDINGS_ZH.md` §51-§52.
+
+Evidence, SASS/RM encodings, failure matrix and the handover notes are in
+`test/sm120_l3_trap_v2/FINDINGS_ZH.md` (§1–§54),
+`test/sm120_l3_trap_v2/L3_TRAP_SM120_REPORT_ZH.md`, the curated
+`test/sm120_l3_trap_v2/compendium/` (README + 01–07), and the reporting/Q&A set in
+`test/sm120_l3_trap_v2/report/` (`00` index, `01-成果汇报.md` → `02-中断入口.md` →
+`03-核心结论.md` → `04-替代形态.md` → `05-下一步论点.md` → `06-问答.md`).

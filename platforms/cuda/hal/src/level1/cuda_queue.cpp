@@ -44,6 +44,9 @@ void CudaQueueLv1::Launch(std::shared_ptr<HwCommand> hw_cmd)
 {
     auto cuda_cmd = std::dynamic_pointer_cast<CudaCommand>(hw_cmd);
     XASSERT(cuda_cmd != nullptr, "hw_cmd is not a CudaCommand");
+    if (getenv("XSCHED_CUDA_LOG_LAUNCH") != nullptr)
+        XINFO("L1::Launch cmd idx=%ld kernel=%d", (long)hw_cmd->GetIdx(),
+              (int)(std::dynamic_pointer_cast<CudaKernelCommand>(hw_cmd) != nullptr));
     CUDA_ASSERT(cuda_cmd->LaunchWrapper(kStream));
 }
 

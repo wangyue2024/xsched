@@ -1,6 +1,9 @@
 #include <mutex>
 
 #include "server.h"
+#ifdef XSCHED_L3_GDB_BACKEND
+#include "xsched/cuda/hal/level3/gdb_interrupt.h"
+#endif
 #include "convert.h"
 #include "xsched/utils/log.h"
 #include "xsched/utils/xassert.h"
@@ -35,6 +38,10 @@ Server::Server(const std::string &policy_name, const std::string &port)
         std::placeholders::_1, std::placeholders::_2));
     http_server_.Post("/policy", std::bind(&Server::PostSchedulerPolicy, this,
         std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+#ifdef XSCHED_L3_GDB_BACKEND
+    http_server_.Post("/l3", std::bind(&Server::PostLevel3, this,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+#endif
     http_server_.Post("/hint", std::bind(&Server::PostHint, this,
         std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
@@ -410,6 +417,61 @@ void Server::PostSchedulerPolicy(const httplib::Request &req, httplib::Response 
 
     scheduler_->SetPolicy(type);
     res.set_content("{\"info\": \"success\"}", "application/json");
+}
+
+// Level-3 interrupt for a managed process.  Unlike the XQueue operations this
+// one is process level: it freezes/resumes the whole application through an
+// external cuda-gdb agent (see GdbInterruptContext).  The target must have been
+// started with XSCHED_SM120_L3_BACKEND=GDB so that it accepts the attach.
+void Server::PostLevel3(const httplib::Request &, httplib::Response &res, const httplib::ContentReader &reader)
+{
+    std::string body;
+    reader([&](const char *data, size_t data_length) {
+        body.append(data, data_length);
+        return true;
+    });
+
+    Json::Value request;
+    if (!json_reader_.parse(body.c_str(), request, false)) {
+        res.status = httplib::StatusCode::BadRequest_400;
+        return;
+    }
+    if (!request.isMember("pid") || !request.isMember("action")) {
+        res.status = httplib::StatusCode::BadRequest_400;
+        res.set_content("{\"error\": \"missing pid or action\"}", "application/json");
+        return;
+    }
+
+    PID pid = (PID)request["pid"].asInt();
+    int action = request["action"].asInt();
+    if (pid <= 0 || action < 0 || action > 2) {
+        res.status = httplib::StatusCode::BadRequest_400;
+        res.set_content("{\"error\": \"invalid pid or action\"}", "application/json");
+        return;
+    }
+
+#ifndef XSCHED_L3_GDB_BACKEND
+    res.status = httplib::StatusCode::NotImplemented_501;
+    res.set_content("{\"error\": \"level-3 GDB backend not built (enable PLATFORM_CUDA)\"}", "application/json");
+    return;
+#else
+    auto &ctx = xsched::cuda::GdbInterruptContext::Instance();
+    if (!xsched::cuda::GdbInterruptContext::IsAvailable()) {
+        res.status = httplib::StatusCode::NotImplemented_501;
+        res.set_content("{\"error\": \"cuda-gdb not available on this host\"}", "application/json");
+        return;
+    }
+
+    // action: 0 query, 1 suspend, 2 resume
+    bool ok = true;
+    if (action == 1) ok = ctx.Suspend(pid);
+    else if (action == 2) ok = ctx.Resume(pid);
+
+    Json::Value response;
+    response["state"] = ctx.IsSuspended(pid) ? 1 : 0;
+    response["ok"] = ok;
+    res.set_content(Json::writeString(json_writer_, response), "application/json");
+#endif
 }
 
 void Server::PostHint(const httplib::Request &, httplib::Response &res, const httplib::ContentReader &reader)

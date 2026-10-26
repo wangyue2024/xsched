@@ -361,6 +361,17 @@ void TarpHandlerSM120::Instrument(void *handler_host, CUdeviceptr handler_dev, s
         XINFO("sm120 trap TEST payload active at offset %#zx", patch_offset);
     } else {
         memcpy(inject_host, trap_inject_instrs, arr_size);
+        if (getenv("XSCHED_SM120_TRAP_NO_BARRIER") != nullptr) {
+            // Diagnostic: the ptxas-emitted MEMBAR/ERRBAR/CGAERRBAR/CCTL.IVALL
+            // block is the prime suspect for the 700 seen after the payload
+            // runs; NOP it and see whether the context survives.
+            for (size_t o = 0xA0; o < 0xA0 + 5 * INSTR_LEN; o += INSTR_LEN) {
+                uint64_t nop0 = 0x0000000000007918ULL, nop1 = 0x000fc00000000000ULL;
+                memcpy((char *)inject_host + o, &nop0, 8);
+                memcpy((char *)inject_host + o + 8, &nop1, 8);
+            }
+            XINFO("sm120 trap: barrier block NOPed for diagnosis");
+        }
     }
     // followed by the replaced instruction
     memcpy((char *)inject_host + arr_size, replaced_instr, INSTR_LEN);

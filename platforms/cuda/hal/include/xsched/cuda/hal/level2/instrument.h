@@ -62,6 +62,9 @@ public:
     ~InstrumentManager() = default;
 
     void Deactivate();
+    // sm120 trap backend: write the preemption command word (preempt_buf + 4).
+    // 2 = preempt_save (park), 1 = preempt_restore (resume).
+    void SetTrapCommand(uint32_t cmd);
     uint64_t Reactivate();
     CUstream OpStream() const { return op_stream_; }
     void NotifyTrapInstrumented() { instrument_ctx_->NotifyTrapInstrumented(); }

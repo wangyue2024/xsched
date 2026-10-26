@@ -1,0 +1,103 @@
+
+=== obj_78aaeb5f0f00_1200.bin  (4608 bytes)
+    best match: plugin_120_1.text.traphandler (2304 bytes)  opcode diffs=8/144
+    +0x00250 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0xe8000000 plugin_imm=0x00000000  live=02780200000000e8000f000000e63f00 plugin=0278020000000000000f000000e63f00
+    +0x00260 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0x000078aa plugin_imm=0x00000000  live=02780300aa780000000f000000e43f00 plugin=0278030000000000000f000000e43f00
+    +0x00380 do_read_trap_reason                    live_imm=0xaaeb5f20 plugin_imm=0x00000000  live=43794000205febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x003e0 do_preempt_restore                     live_imm=0xaaeb5f30 plugin_imm=0x00000000  live=4379c000305febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x00430 do_detect_continuation                 live_imm=0xaaeb5f3c plugin_imm=0x00000000  live=437980003c5febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x004a0 do_set_defer_continuations             live_imm=0xaaeb5f48 plugin_imm=0x00000000  live=43790000485febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x004f0 do_pause                               live_imm=0xaaeb5f50 plugin_imm=0x00000000  live=4379c000505febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x00550 do_preempt_save                        live_imm=0xaaeb5f64 plugin_imm=0x00000000  live=43798000645febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x005b0 do_pause_quiet                         live_imm=0xaaeb5f70 plugin_imm=0x00000000  live=43794000705febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x00610 get_defer_continuation_state_and_clear live_imm=0xaaeb5f78 plugin_imm=0x00000000  live=4379c000785febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    +0x00690 do_handle_continuations                live_imm=0xaaeb5f84 plugin_imm=0x00000000  live=43798000845febaa7800800300c03f00 plugin=43790000000000000000800300c03f00
+    -- decoded 64-bit addresses --
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00250 = 0x0078aae8000000
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00260 = 0x000000000078aa
+    do_read_trap_reason                    @+0x00380 = 0x0000ffaaeb5f20
+    do_preempt_restore                     @+0x003e0 = 0x000000aaeb5f30
+    do_detect_continuation                 @+0x00430 = 0x000002aaeb5f3c
+    do_set_defer_continuations             @+0x004a0 = 0x000000aaeb5f48
+    do_pause                               @+0x004f0 = 0x0000ffaaeb5f50
+    do_preempt_save                        @+0x00550 = 0x000000aaeb5f64
+    do_pause_quiet                         @+0x005b0 = 0x0000ffaaeb5f70
+    get_defer_continuation_state_and_clear @+0x00610 = 0x000002aaeb5f78
+
+=== obj_78aaeb5f2100_1200.bin  (4608 bytes)
+    best match: plugin_120_1.text.do_read_trap_reason (2304 bytes)  opcode diffs=0/144
+    +0x00090 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x000a0 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    +0x00120 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0xe8000000 plugin_imm=0x00000000  live=02780400000000e8000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00130 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e43f00 plugin=0278050000000000000f000000e43f00
+    +0x00340 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00350 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000f03f00 plugin=0278050000000000000f000000f03f00
+    +0x00440 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00450 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    -- decoded 64-bit addresses --
+    scratchpad                             @+0x00090 = 0x0078aaeba00000
+    scratchpad                             @+0x000a0 = 0x000010000078aa
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00120 = 0x0078aae8000000
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00130 = 0x000000000078aa
+    scratchpad                             @+0x00350 = 0x000004000078aa
+
+=== obj_78aaeb5f3300_b00.bin  (2816 bytes)
+    best match: plugin_120_0.text.do_preempt_restore (512 bytes)  opcode diffs=1/32
+    +0x00060 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00070 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    +0x000f0 cilp_traphandler_restore               live_imm=0xaaeb5fb9 plugin_imm=0x00000001  live=4a79c000b95febaa7800800300c03f00 plugin=4a790000010000000000800300c03f00
+    -- decoded 64-bit addresses --
+    scratchpad                             @+0x00060 = 0x0078aaeba00000
+    scratchpad                             @+0x00070 = 0x000010000078aa
+
+=== obj_78aaeb5f5300_1300.bin  (4864 bytes)
+    best match: plugin_120_0.text.do_pause (2560 bytes)  opcode diffs=0/160
+    +0x00010 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00020 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    +0x00130 trap_reason_table                      live_imm=0xeac38300 plugin_imm=0x00000000  live=027800000083c3ea000f000000e63f00 plugin=0278000000000000000f000000e63f00
+    +0x00140 trap_reason_table                      live_imm=0x000078aa plugin_imm=0x00000000  live=02780700aa780000000f000000e63f00 plugin=0278070000000000000f000000e63f00
+    +0x00170 pause_reason_table                     live_imm=0xeb000000 plugin_imm=0x00000000  live=02780000000000eb000f000000e63f00 plugin=0278000000000000000f000000e63f00
+    +0x00180 pause_reason_table                     live_imm=0x000078aa plugin_imm=0x00000000  live=02780700aa780000000f000000e63f00 plugin=0278070000000000000f000000e63f00
+    +0x00250 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00260 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    +0x00350 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00360 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    -- decoded 64-bit addresses --
+    scratchpad                             @+0x00010 = 0x0078aaeba00000
+    scratchpad                             @+0x00020 = 0x000001000078aa
+    trap_reason_table                      @+0x00130 = 0x0078aaeac38300
+    trap_reason_table                      @+0x00140 = 0x000002000078aa
+    pause_reason_table                     @+0x00170 = 0x0078aaeb000000
+    pause_reason_table                     @+0x00180 = 0x000004000078aa
+    scratchpad                             @+0x00260 = 0x000010000078aa
+    INVOKE_AFTER_SAVE                      @+0x00880 = 0x00000000000000
+    INVOKE_AFTER_SAVE_INST2                @+0x00890 = 0x00000000000000
+    INVOKE_BEFORE_RESTORE                  @+0x00940 = 0x00000000000000
+    INVOKE_BEFORE_RESTORE_INST2            @+0x00950 = 0x00000000000000
+
+=== obj_78aaeb5f6600_b00.bin  (2816 bytes)
+    best match: plugin_120_0.text.do_preempt_save (512 bytes)  opcode diffs=0/32
+    +0x00060 scratchpad                             live_imm=0xeba00000 plugin_imm=0x00000000  live=027804000000a0eb000f000000e63f00 plugin=0278040000000000000f000000e63f00
+    +0x00070 scratchpad                             live_imm=0x000078aa plugin_imm=0x00000000  live=02780500aa780000000f000000e63f00 plugin=0278050000000000000f000000e63f00
+    +0x00100 cilp_traphandler_save                  live_imm=0xaaeb5f91 plugin_imm=0x00000001  live=4a790000915febaa7800800300c03f00 plugin=4a790000010000000000800300c03f00
+    -- decoded 64-bit addresses --
+    scratchpad                             @+0x00060 = 0x0078aaeba00000
+    scratchpad                             @+0x00070 = 0x000010000078aa
+
+=== obj_78aaeb5f9000_2b00.bin  (11008 bytes)
+    best match: plugin_120_1.text.cilp_traphandler_save (8832 bytes)  opcode diffs=0/552
+    +0x00170 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0xe8000000 plugin_imm=0x00000000  live=02780000000000e8000f000000e63f00 plugin=0278000000000000000f000000e63f00
+    +0x00180 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0x000078aa plugin_imm=0x00000000  live=02780100aa780000000f000000e83f00 plugin=0278010000000000000f000000e83f00
+    +0x00370 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0xe8000000 plugin_imm=0x00000000  live=02780000000000e8000f000000e63f00 plugin=0278000000000000000f000000e63f00
+    +0x00380 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0x000078aa plugin_imm=0x00000000  live=02780100aa780000000f000000e83f00 plugin=0278010000000000000f000000e83f00
+    -- decoded 64-bit addresses --
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00170 = 0x0078aae8000000
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00180 = 0x000000000078aa
+
+=== obj_78aaeb5fbb00_2700.bin  (9984 bytes)
+    best match: plugin_120_1.text.cilp_traphandler_restore (7808 bytes)  opcode diffs=0/488
+    +0x00180 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0xe8000000 plugin_imm=0x00000000  live=02780000000000e8000f000000e63f00 plugin=0278000000000000000f000000e63f00
+    +0x00190 CUDA_PREEMPTION_BUFFER_PATCH_ADDR      live_imm=0x000078aa plugin_imm=0x00000000  live=02780100aa780000000f000000e83f00 plugin=0278010000000000000f000000e83f00
+    -- decoded 64-bit addresses --
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00180 = 0x0078aae8000000
+    CUDA_PREEMPTION_BUFFER_PATCH_ADDR      @+0x00190 = 0x000000000078aa

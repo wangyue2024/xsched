@@ -34,6 +34,9 @@ public:
     int SetProcessUtilization(PID pid, Utilization util);
     int SetTimeslice(Timeslice ts_us);
 
+    // level-3 debugger backend: action 0 = query, 1 = suspend, 2 = resume
+    int PreemptProcess(PID pid, int action);
+
 private:
     std::unique_ptr<Client> client_ = nullptr;
 };

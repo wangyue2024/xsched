@@ -9,10 +9,32 @@
 #include "xsched/cuda/hal/arch/sm70.h"
 #include "xsched/cuda/hal/arch/sm86.h"
 #include "xsched/cuda/hal/arch/sm120.h"
+#include "xsched/cuda/hal/level3/gdb_interrupt.h"
 // NEW_CUDA_ARCH: New CUDA architecture support goes here
 
 using namespace xsched::cuda;
 using namespace xsched::preempt;
+
+// XSCHED_SM120_L3_BACKEND=GDB: allow a scheduler-side cuda-gdb agent to attach
+// to this process, which is what the level-3 interrupt backend drives.  Inert
+// unless the env var is set.
+static void MaybeAllowGdbBackend()
+{
+    static bool done = false;
+    if (done) return;
+    done = true;
+    const char *backend = getenv("XSCHED_SM120_L3_BACKEND");
+    if (backend == nullptr || std::strcmp(backend, "GDB") != 0) return;
+    if (!GdbInterruptContext::IsAvailable()) {
+        XWARN("XSCHED_SM120_L3_BACKEND=GDB but cuda-gdb was not found in PATH");
+        return;
+    }
+    if (GdbInterruptContext::AllowDebuggerAttach()) {
+        XINFO("level-3 GDB backend enabled: this process accepts a debugger attach");
+    } else {
+        XWARN("level-3 GDB backend: prctl(PR_SET_PTRACER) failed");
+    }
+}
 
 static int32_t GetArch(CUdevice dev)
 {
@@ -90,11 +112,29 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
     case 70: // Volta: V100, GV100
     case 86: // Ampere: RTX3050 - RTX 3090 Ti
         return std::make_shared<CudaQueueLv3Trap>(stream);
-    case 120: // Blackwell: RTX 50 series -- trap path unavailable on 595+ (see
-              // test/sm120_l3_probe/ATTACH_REPLAY_PLAN.md Round-2: the tools trap
-              // handler is a non-live template and no user-space mechanism can
-              // stop a running kernel); use the TSG timeslice path instead.
+    case 120: { // Blackwell: RTX 50 series.
+        // The in-context trap path (cuXtraGetTrapHandlerInfo / cuXtraTriggerTrap)
+        // is still unavailable on driver 595+: the RM trap trigger does not
+        // deliver a trap and the 0x83de debugger session needs RS_ACCESS_DEBUG,
+        // which os_check_access() never grants (test/sm120_l3_trap_v2/FINDINGS_ZH.md
+        // v0.3).  But "a running kernel cannot be stopped from user space" - the
+        // v1 verdict in test/sm120_l3_probe/ARCHIVE_ZH.md - is wrong: an external
+        // cuda-gdb agent freezes a running kernel in 116 ms and hands the device
+        // to other work (FINDINGS_ZH.md v0.7).  That backend is process level and
+        // is driven from the scheduler side (GdbInterruptContext), so the
+        // in-process queue keeps using the TSG timeslice path by default and the
+        // debugger backend is opt-in.
+        //
+        // Opt in with XSCHED_SM120_L3_BACKEND=GDB: it only makes the target
+        // traceable (prctl PR_SET_PTRACER), which the external agent needs.
+        const char *backend = getenv("XSCHED_SM120_L3_BACKEND");
+        if (backend != nullptr && std::strcmp(backend, "TRAP") == 0) {
+            XINFO("level-3 sm120 trap backend enabled");
+            return std::make_shared<CudaQueueLv3Trap>(stream);
+        }
+        MaybeAllowGdbBackend();
         return std::make_shared<CudaQueueLv3Tsg>(stream);
+    }
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
         return std::make_shared<CudaQueueLv1>(stream);

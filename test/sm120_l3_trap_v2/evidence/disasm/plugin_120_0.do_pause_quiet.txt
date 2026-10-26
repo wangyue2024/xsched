@@ -1,0 +1,24 @@
+	.headerflags	@"EF_CUDA_64BIT_ADDRESS EF_CUDA_ACCELERATORS EF_CUDA_SM120 EF_CUDA_VIRTUAL_SM(EF_CUDA_SM120)"
+        /*0000*/                   MOV R4, 0x0                     &req={1,0}         ?trans3;
+        /*0010*/                   MOV R5, 0x0                     &req={1,0}         ?trans3;
+        /*0020*/                   MOV R0, 0x1                     &req={1,0}         ?trans8;
+        /*0030*/                   ST.E.STRONG.SM.PRIVATE [R4], R0 &req={1,0} &rd=0x1 ?trans2;
+        /*0040*/                   CCTLL.IVALL                     &req={1,0}         ?trans1;
+        /*0050*/                   CCTL.IVALL                      &req={1,0}         ?trans1;
+        /*0060*/                   MEMBAR.SYS;
+        /*0070*/                   BPT.DRAIN;
+        /*0090*/                   CCTL.C.IVALL                    &req={1,0}         ?trans8;
+        /*00a0*/                   CCTL.I.IVALL                    &req={1,0}         ?trans11;
+        /*00b0*/                   CCTLL.IVALL                     &req={1,0}         ?trans1;
+        /*00c0*/                   CCTL.IVALL                      &req={1,0}         ?trans1;
+        /*00d0*/                   MEMBAR.SYS;
+        /*00e0*/                   RET.ABS R12 0x20                &req={1,0};
+        /*00f0*/                   BRA 0xf0;
+        /*0100*/                   NOP;
+        /*0110*/                   NOP;
+        /*0120*/                   NOP;
+        /*0130*/                   NOP;
+        /*0140*/                   NOP;
+        /*0150*/                   NOP;
+        /*0160*/                   NOP;
+        /*0170*/                   NOP;

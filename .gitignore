@@ -21,3 +21,11 @@ __pycache__
 *.cdf
 *.exe
 *.dll
+
+# sm120 L3 large/rebuildable artifacts (keep docs, source, scripts, report zip)
+test/sm120_l3_trap_v2/evidence/**/drivers/
+test/sm120_l3_trap_v2/evidence/**/upstream/*.tar.gz
+test/sm120_l3_trap_v2/**/bin/
+test/sm120_l3_trap_v2/sm120_L3_report/
+test/sm120_l3_trap_v2/evidence/**/*.log.*
+test/sm120_l3_trap_v2/evidence/**/*.o

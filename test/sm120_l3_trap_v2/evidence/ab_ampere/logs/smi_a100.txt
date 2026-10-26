@@ -1,0 +1,2 @@
+name, driver_version, compute_cap
+NVIDIA A100-PCIE-40GB, 550.107.02, 8.0

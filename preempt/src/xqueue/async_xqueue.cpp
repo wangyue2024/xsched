@@ -129,6 +129,7 @@ void AsyncXQueue::Resume(int64_t flags)
     if (!(flags & kQueueResumeFlagDropCommands)) {
         // Regular restore, reactivate and then resume if not dropping commands.
         const CommandLog &log = launch_worker_->GetCommandLog();
+        XINFO("Resume: command log has %zu entries", log.size());
         if (level_ >= kPreemptLevelInterrupt)  kHwQueue->Restore(log);
         if (level_ >= kPreemptLevelDeactivate) kHwQueue->Reactivate(log);
         launch_worker_->Resume();

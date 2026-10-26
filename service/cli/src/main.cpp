@@ -56,6 +56,17 @@ int main(int argc, char **argv)
     CLI::Option *policy_n_op = policy->add_option(
         "-n,--name", policy_name, "Name of the policy to set.");
 
+    // subcommand l3 (level-3 interrupt, process level)
+    CLI::App *l3 = xcli->add_subcommand("l3",
+        "Level-3 interrupt of a managed process (freezes/resumes the whole app "
+        "through an external cuda-gdb agent; needs XSCHED_SM120_L3_BACKEND=GDB "
+        "on the target).");
+    PID l3_pid = 0;
+    l3->add_option("-x,--pid", l3_pid, "Process id of the target.")->required();
+    CLI::Option *l3_query = l3->add_flag("-q,--query", "Query the current state.");
+    CLI::Option *l3_susp  = l3->add_flag("-s,--suspend", "Suspend the target.");
+    CLI::Option *l3_resu  = l3->add_flag("-r,--resume", "Resume the target.");
+
     // subcommand hint
     CLI::App *hint = xcli->add_subcommand("hint", "Give a hint to the XSched server.");
     XQueueHandle hint_xq = 0;
@@ -78,6 +89,15 @@ int main(int argc, char **argv)
     if (top->parsed()) return cli.TopXQueues(1000.0 / frequency);
     if (list->parsed()) return cli.ListXQueues();
     if (config->parsed()) return cli.ConfigXQueue(xq_cfg, level, threshold, batch_size);
+
+    if (l3->parsed()) {
+        if (l3_query->count() + l3_susp->count() + l3_resu->count() > 1) {
+            std::cout << "Only one of --query/--suspend/--resume may be given." << std::endl;
+            return 1;
+        }
+        int action = l3_susp->count() ? 1 : (l3_resu->count() ? 2 : 0);
+        return cli.PreemptProcess(l3_pid, action);
+    }
 
     if (policy->parsed()) {
         if (!policy_q_op->empty()) return cli.QueryPolicy();

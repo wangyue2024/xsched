@@ -1,0 +1,17 @@
+	.headerflags	@"EF_CUDA_64BIT_ADDRESS EF_CUDA_ACCELERATORS EF_CUDA_SM120 EF_CUDA_VIRTUAL_SM(EF_CUDA_SM120)"
+        /*0000*/                   RET.ABS R12 0x20 &req={1,0};
+        /*0010*/                   BRA 0x10;
+        /*0020*/                   NOP;
+        /*0030*/                   NOP;
+        /*0040*/                   NOP;
+        /*0050*/                   NOP;
+        /*0060*/                   NOP;
+        /*0070*/                   NOP;
+        /*0080*/                   NOP;
+        /*0090*/                   NOP;
+        /*00a0*/                   NOP;
+        /*00b0*/                   NOP;
+        /*00c0*/                   NOP;
+        /*00d0*/                   NOP;
+        /*00e0*/                   NOP;
+        /*00f0*/                   NOP;

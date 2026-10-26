@@ -27,10 +27,12 @@ add_subdirectory(utils)
 add_subdirectory(protocol)
 add_subdirectory(sched)
 add_subdirectory(preempt)
+# platforms first: the service can then optionally link the platform HALs
+# (e.g. xserver links halcuda for the level-3 debugger backend)
+add_subdirectory(platforms)
 if(BUILD_SERVICE)
     add_subdirectory(service)
 endif()
-add_subdirectory(platforms)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)

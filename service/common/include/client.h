@@ -39,6 +39,11 @@ public:
     XResult SetTimeslice(Timeslice ts_us);
     XResult SetActiveWindow(PID pid, uint64_t display);
 
+    // level-3 debugger backend (process level; see
+    // platforms/cuda/hal/include/xsched/cuda/hal/level3/gdb_interrupt.h)
+    // action: 0 = query state, 1 = suspend, 2 = resume
+    XResult SetProcessPreempt(PID pid, int action, int &state);
+
 private:
     XResult SendHint(const Json::Value &request);
     XResult GetResponse(const httplib::Result &res, Json::Value &response);

@@ -140,6 +140,15 @@ int Cli::SetPriority(XQueueHandle handle, Priority prio)
     return 0;
 }
 
+int Cli::PreemptProcess(PID pid, int action)
+{
+    int state = -1;
+    XSCHED_ASSERT(client_->SetProcessPreempt(pid, action, state));
+    std::cout << "level-3: pid " << pid << " state="
+              << (state == 1 ? "suspended" : (state == 0 ? "running" : "unknown")) << std::endl;
+    return 0;
+}
+
 int Cli::SetProcessPriority(PID pid, Priority prio)
 {
     XSCHED_ASSERT(client_->SetProcessPriority(pid, prio));

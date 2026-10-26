@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <fstream>
 #include <cuda_runtime.h>
+#include <atomic>
+#include <thread>
 
 #include "cudart_utils.h"
 #include "xsched/utils.h"
@@ -32,6 +34,14 @@ __global__ void WaitFlag(int32_t *flag)
 __global__ void Sleep(uint64_t clock_cnt)
 {
     Wait(clock_cnt);
+}
+
+__global__ void PublishSpin(volatile unsigned long long *c, unsigned long long clock_cnt)
+{
+    uint64_t start = clock64();
+    unsigned long long i = 0;
+    while (clock64() - start < clock_cnt) { i++; if ((i & 0xff) == 0) *c = i; }
+    *c = i | (1ULL << 63);
 }
 
 void TestBlockPreempt(uint64_t us, cudaStream_t stream, XQueueHandle xq)
@@ -163,6 +173,51 @@ int main(int argc, char **argv)
     CudaQueueCreate(&hwq, stream);
     XQueueCreate(&xq, hwq, level, kQueueCreateFlagNone);
     XQueueSetLaunchConfig(xq, 8, 4);
+
+    if (getenv("L3_SPIN_ONLY")) {
+        long spin_ms = atol(getenv("L3_SPIN_ONLY"));
+        long hold_ms = getenv("L3_SPIN_HOLD") ? atol(getenv("L3_SPIN_HOLD")) : 800;
+        unsigned long long *hcnt = nullptr;
+        CUDART_ASSERT(cudaHostAlloc((void **)&hcnt, 4096, cudaHostAllocMapped));
+        memset((void *)hcnt, 0, 4096);
+        unsigned long long *dcnt = nullptr;
+        CUDART_ASSERT(cudaHostGetDevicePointer((void **)&dcnt, hcnt, 0));
+        cudaDeviceProp prop;
+        CUDART_ASSERT(cudaGetDeviceProperties(&prop, 0));
+        unsigned long long cycles = (unsigned long long)prop.clockRate * 1000ULL * spin_ms / 1000ULL;
+        std::atomic<bool> stop(false);
+        std::thread sampler([&]() {
+            while (!stop.load()) {
+                XINFO("[SPIN] counter=%llu", *hcnt & ~(1ULL << 63));
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            }
+        });
+        PublishSpin<<<8, 32, 0, stream>>>(dcnt, cycles);
+        XINFO("[SPIN] launch -> %s", cudaGetErrorName(cudaGetLastError()));
+        std::this_thread::sleep_for(std::chrono::milliseconds(600));
+        int64_t s_ns = EXEC_TIME(nanoseconds, { XQueueSuspend(xq, kQueueSuspendFlagSyncHwQueue); });
+        XINFO("[SPIN] suspend %.3f ms counter=%llu", s_ns / 1e6, *hcnt & ~(1ULL << 63));
+        std::this_thread::sleep_for(std::chrono::milliseconds(hold_ms));
+        XINFO("[SPIN] after hold counter=%llu", *hcnt & ~(1ULL << 63));
+        XQueueResume(xq, kQueueResumeFlagNone);
+        cudaError_t se = cudaStreamSynchronize(stream);
+        XINFO("[SPIN] final sync -> %s counter=%llu", cudaGetErrorName(se),
+              *hcnt & ~(1ULL << 63));
+        stop = true; sampler.join();
+        return 0;
+    }
+
+    if (getenv("L3_LAUNCH_ONLY")) {
+        for (int i = 0; i < 5; i++) {
+            Sleep<<<1, 32, 0, stream>>>(1000);
+            cudaError_t e = cudaStreamSynchronize(stream);
+            XINFO("[LAUNCHONLY] sync %d -> %s", i, cudaGetErrorName(e));
+            if (e != cudaSuccess) break;
+        }
+        XINFO("[LAUNCHONLY] done");
+        if (getenv("L3_LAUNCH_ONLY_HOLD")) sleep(atoi(getenv("L3_LAUNCH_ONLY_HOLD")));
+        return 0;
+    }
 
     for (size_t i = 10; i < 100; i += 10) {
         TestBlockPreempt(i, stream, xq);

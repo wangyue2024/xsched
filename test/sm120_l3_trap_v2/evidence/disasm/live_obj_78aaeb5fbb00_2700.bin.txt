@@ -1,0 +1,8 @@
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found
+nvdisasm error   : Illegal instruction found

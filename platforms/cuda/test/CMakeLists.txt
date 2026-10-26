@@ -28,6 +28,23 @@ file(GLOB_RECURSE CUDART_MAIN_SRCS
 )
 foreach(CUDART_MAIN_SRC ${CUDART_MAIN_SRCS})
     get_filename_component(CUDART_TARGET ${CUDART_MAIN_SRC} NAME_WE)
+    # l3ctl is a pure host tool (level-3 debugger backend control); it does not
+    # use the cudart helpers, so keep it out of the cudart_common link.
+    if(CUDART_TARGET STREQUAL "l3ctl")
+        add_executable(l3ctl ${CUDART_MAIN_SRC})
+        target_include_directories(l3ctl PRIVATE
+            ${XSCHED_INCLUDE_DIR}
+            ${CMAKE_CURRENT_LIST_DIR}/include
+        )
+        target_link_libraries(l3ctl PRIVATE utils preempt halcuda)
+        set_target_properties(l3ctl PROPERTIES
+            INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH_USE_LINK_PATH TRUE
+        )
+        install(TARGETS l3ctl RUNTIME DESTINATION bin/cuda)
+        continue()
+    endif()
     add_executable(${CUDART_TARGET}
         ${CUDART_MAIN_SRC}
         $<TARGET_OBJECTS:cudart_common>

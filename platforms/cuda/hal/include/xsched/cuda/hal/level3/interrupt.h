@@ -30,6 +30,7 @@ private:
     CUdeviceptr trap_handler_dev_ = 0;
     std::shared_ptr<TarpHandler> trap_handler_ = nullptr;
     std::unique_ptr<InstrMemAllocator> instrument_mem_ = nullptr;
+    bool sm120_trap_ = false;
 };
 
 } // namespace xsched::cuda

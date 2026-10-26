@@ -87,3 +87,57 @@ trap 全链路实现成功（handler 获取、改写、触发均逐环字节级�
 |---|---|---|
 | `sm120-level3-probe`（`ff14d06`、`2eb2e63`） | Windows 探针 + Linux trap 实现与根因 | ✅ 已备份 |
 | `dev/Linuxlevel3`（`2db49a5` + 本封存提交） | attach 复刻证据、汇总文档、本档案 | ✅ 本提交后备份 |
+
+---
+
+## 附：v2 结论修订（2026-10-16，追加，不改动上文）
+
+> 上文（v1 封存）的核心结论"sm120 上运行中内核不可中断"**已被推翻**。
+> v2 的完整记录在 `test/sm120_l3_trap_v2/`（`FINDINGS_ZH.md` v0.1–v0.6、`RM_REVERSE_ZH.md`）。
+
+### 一、v1 判死依据的失效
+
+1. **"cuda-gdb 也停不住运行中内核"** —— 依据是 `info cuda threads` 输出 "No CUDA threads"
+   与同进程 `cudaMemcpy` 采样的计数器平滑。前者在设备确实已冻结时仍会打印 `Status=Active`；
+   后者在挂起时会**阻塞而不是返回旧值**。改用 `/dev/shm` + 独立观察进程重测：
+   cuda-gdb 在 8.22 s 停驻窗口内计数器只前进 7.44 M（≈0.2 s 的量），冻结真实存在。
+2. **"slot20 的 4864 B 对象是活体 trap handler"** —— 它其实是重定位后的 `.text.do_pause`
+   （handler 的被调用者），不是 trap 入口。真正的活体 handler 是 libcuda 内嵌、运行时下载到
+   设备内存的 SASS plugin（arena base+0x15f0f00）。
+
+### 二、v2 新增的可复现能力
+
+`test/sm120_l3_trap_v2/run_l3mi.sh`：外部进程驱动一个 cuda-gdb MI agent，
+**按指令冻结/恢复运行中的内核**：
+
+| | |
+|---|---|
+| 中断延迟（请求→设备静止） | **116 ms** |
+| 恢复延迟 | ~115 ms |
+| 重复性 | ✅ 三轮冻结窗口 1.40 / 1.42 / 1.40 s（请求 1.5 s） |
+| 目标侧要求 | 仅 `prctl(PR_SET_PTRACER, ANY)`；**不需要断点、不需要轮询点** |
+| 粒度 | per-context（冻结期间桌面与其它进程不受影响） |
+
+另有 `run_l3poc.sh`（断点式，延迟约 30 ms，但需要在目标里放一个轮询点）。
+
+### 三、仍然不可行的部分（新的能力边界）
+
+- ~~资源让渡~~ → **已证实可行（2026-10-16 更正）**：早期"冻结不让渡"的结论来自一个**不产生竞争**
+  的实验配置（两个内核本来就能并存）。把占用拉满后（A = 20000 block × 256 线程霸占 GPU，
+  B = 1 block × 32 线程瞬时内核）：
+  **不冻结 A 时 B 要 33.65 s，冻结 A 4 s 后 B 只要 0.74 s（45×）**
+  ⇒ 冻结确实把 SM 资源让渡给了其它内核。证据：`test/sm120_l3_trap_v2/tools/handover_test.sh`。
+  仍不可复现的是 sm70/86 那种 **trap handler 内 kill block** 的语义，但那已不是让渡的必要条件。
+- **设备侧 trap**：`cuXtraTriggerTrap`（RM 全局寄存器 0x419e84 bit31）在 595/sm120 上不送 trap；
+  自建 `class 0x83de` 会话因缺 `RS_ACCESS_DEBUG`（`os_check_access()` 对该权利硬编码 `return NV_FALSE`）
+  而在跨 client 时返回 0x1b、在同 client 时静默空转；`NV_ESC_RM_SHARE`(0x35) 也不授予该权利。
+- **调试器改 PC 杀 block**：cuda-gdb 拒写 CUDA PC（`cuda_value_to_register` 断言）。
+- **延迟**：116 ms 与 sm70/86 的微秒级差 4–5 个数量级。
+
+### 四、复用价值
+
+`RM_REVERSE_ZH.md` 里恢复出来的 RM ABI 是**可复用的资产**：
+RM escape 全表、`class 0x83de`（KernelSMDebuggerSession）全部 32 条控制命令
+（名字/参数尺寸/flags/IMPL 符号）、`NV2080_CTRL_CMD_GPU_EXEC_REG_OPS = 0x20800122`、
+NV 状态码、RM 权限模型（含 `rsAccessCheckRights`/`_rsAccessGetSharedRights`/`os_check_access` 的代码地址）、
+以及 cuda-gdb 真实 suspend 的完整 RM 时序。后续任何 sm120/Blackwell 的 GPU 抢占工作都可以直接用。

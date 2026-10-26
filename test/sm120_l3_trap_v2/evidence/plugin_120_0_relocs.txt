@@ -1,0 +1,74 @@
+
+## .text.traphandler (14 relocs)
+  0x000250 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000260 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000380 type=75  sym=do_read_trap_reason addend=0x0
+  0x0003e0 type=75  sym=do_preempt_restore addend=0x0
+  0x000410 type=75  sym=do_pause addend=0x0
+  0x000470 type=75  sym=do_detect_continuation addend=0x0
+  0x0004e0 type=75  sym=do_set_defer_continuations addend=0x0
+  0x000530 type=67  sym=DEBUGGER_MODULE_JCAL_PATCH_LOC addend=0x0
+  0x000530 type=75  sym=do_pause addend=0x0
+  0x000590 type=75  sym=do_preempt_save addend=0x0
+  0x0005c0 type=75  sym=do_pause addend=0x0
+  0x000620 type=75  sym=do_pause_quiet addend=0x0
+  0x000680 type=75  sym=get_defer_continuation_state_and_clear addend=0x0
+  0x000700 type=75  sym=do_handle_continuations addend=0x0
+
+## .text.do_read_trap_reason (8 relocs)
+  0x0000a0 type=56  sym=scratchpad addend=0x0
+  0x0000b0 type=57  sym=scratchpad addend=0x0
+  0x000130 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000140 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000250 type=56  sym=scratchpad addend=0x0
+  0x000260 type=57  sym=scratchpad addend=0x0
+  0x0004d0 type=56  sym=scratchpad addend=0x0
+  0x0004e0 type=57  sym=scratchpad addend=0x0
+
+## .text.do_preempt_restore (3 relocs)
+  0x000060 type=56  sym=scratchpad addend=0x0
+  0x000070 type=57  sym=scratchpad addend=0x0
+  0x0000f0 type=75  sym=cilp_traphandler_restore addend=0x0
+
+## .text.do_set_defer_continuations (2 relocs)
+  0x000020 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000030 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+
+## .text.do_pause (14 relocs)
+  0x000010 type=56  sym=scratchpad addend=0x0
+  0x000020 type=57  sym=scratchpad addend=0x0
+  0x000130 type=56  sym=trap_reason_table addend=0x0
+  0x000140 type=57  sym=trap_reason_table addend=0x0
+  0x000170 type=56  sym=pause_reason_table addend=0x0
+  0x000180 type=57  sym=pause_reason_table addend=0x0
+  0x000250 type=56  sym=scratchpad addend=0x0
+  0x000260 type=57  sym=scratchpad addend=0x0
+  0x000350 type=56  sym=scratchpad addend=0x0
+  0x000360 type=57  sym=scratchpad addend=0x0
+  0x000880 type=67  sym=INVOKE_AFTER_SAVE addend=0x0
+  0x000890 type=67  sym=INVOKE_AFTER_SAVE_INST2 addend=0x0
+  0x000940 type=67  sym=INVOKE_BEFORE_RESTORE addend=0x0
+  0x000950 type=67  sym=INVOKE_BEFORE_RESTORE_INST2 addend=0x0
+
+## .text.do_preempt_save (3 relocs)
+  0x000060 type=56  sym=scratchpad addend=0x0
+  0x000070 type=57  sym=scratchpad addend=0x0
+  0x000100 type=75  sym=cilp_traphandler_save addend=0x0
+
+## .text.do_pause_quiet (2 relocs)
+  0x000000 type=56  sym=scratchpad addend=0x0
+  0x000010 type=57  sym=scratchpad addend=0x0
+
+## .text.get_defer_continuation_state_and_clear (2 relocs)
+  0x000010 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000020 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+
+## .text.cilp_traphandler_save (4 relocs)
+  0x000170 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000180 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000370 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000380 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+
+## .text.cilp_traphandler_restore (2 relocs)
+  0x000180 type=56  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0
+  0x000190 type=57  sym=CUDA_PREEMPTION_BUFFER_PATCH_ADDR addend=0x0

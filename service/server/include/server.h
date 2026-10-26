@@ -44,6 +44,7 @@ private:
     void GetSchedulerPolicy(const httplib::Request &req, httplib::Response &res);
     void PostSchedulerPolicy(const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader);
     void PostHint(const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader);
+    void PostLevel3(const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader);
 
     std::mutex chan_mtx_;
     std::unique_ptr<ipc::Node> recv_chan_ = nullptr;
